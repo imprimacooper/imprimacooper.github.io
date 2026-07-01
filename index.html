@@ -26,7 +26,43 @@
     justify-content: center;
     min-height: 100vh;
     padding: 20px;
-    background-color: #1f1f1f;
+    background-color: #000000;
+    position: relative;
+    overflow: hidden;
+  }
+
+  .bg-layer {
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    z-index: 0;
+    pointer-events: none;
+    background:
+      radial-gradient(
+        circle at var(--mx, 50%) var(--my, 50%),
+        #1f1f1f 0%,
+        #101010 35%,
+        #010101 65%,
+        #000000 100%
+      );
+    transition: background-position 0.3s ease-out;
+    animation: pulse 10s ease-in-out infinite;
+  }
+
+  @keyframes pulse {
+    0%, 100% {
+      filter: brightness(1);
+    }
+    50% {
+      filter: brightness(1.15);
+    }
+  }
+
+  .splash-container {
+    position: relative;
+    z-index: 1;
   }
 
   .splash-container {
@@ -79,12 +115,36 @@
 </head>
 <body>
 
+  <div class="bg-layer" id="bgLayer"></div>
+
   <div class="splash-container">
     <img src="logo.svg" alt="Imprima Cooper" class="logo">
     <a href="https://imprimacooper.com.br/" target="_blank" rel="noopener noreferrer" class="visit-button">
       Visitar Site
     </a>
   </div>
+
+  <script>
+    const bgLayer = document.getElementById('bgLayer');
+
+    window.addEventListener('mousemove', (e) => {
+      const x = (e.clientX / window.innerWidth) * 100;
+      const y = (e.clientY / window.innerHeight) * 100;
+      bgLayer.style.setProperty('--mx', x + '%');
+      bgLayer.style.setProperty('--my', y + '%');
+    });
+
+    // Suporte a toque em dispositivos móveis
+    window.addEventListener('touchmove', (e) => {
+      const touch = e.touches[0];
+      if (touch) {
+        const x = (touch.clientX / window.innerWidth) * 100;
+        const y = (touch.clientY / window.innerHeight) * 100;
+        bgLayer.style.setProperty('--mx', x + '%');
+        bgLayer.style.setProperty('--my', y + '%');
+      }
+    });
+  </script>
 
 </body>
 </html>
