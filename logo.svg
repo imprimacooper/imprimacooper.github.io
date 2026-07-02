@@ -17,7 +17,87 @@ viewBox="0 0 28937.24 9773.21"
     .fil7 {fill:url(#id3)}
     .fil6 {fill:url(#id4)}
     .fil5 {fill:url(#id5)}
+	/* efeito de desenho para o Contorno */
+#Contorno {
+  stroke-dasharray: 30000; /* valor grande para cobrir o comprimento */
+  stroke-dashoffset: 30000;
+  animation: draw 0.5s linear forwards;
+  animation-delay: 0s; /* junto com Imprima */
+}
+
+@keyframes draw {
+  to { stroke-dashoffset: 0; }
+}
+
+/* animação genérica de fade + translate */
+@keyframes reveal {
+  from { opacity: 0; transform: translateY(20px); }
+  to   { opacity: 1; transform: translateY(0); }
+}
+
+/* ordem definida */
+#Imprima {
+  animation: reveal 0.5s ease forwards;
+  animation-delay: 0s; /* simultâneo com Contorno */
+}
+
+#C { animation: reveal 0.5s ease forwards; animation-delay: 0.5s; }
+#O1 { animation: reveal 0.5s ease forwards; animation-delay: 1s; }
+#O2 { animation: reveal 0.5s ease forwards; animation-delay: 1.5s; }
+#P  { animation: reveal 0.5s ease forwards; animation-delay: 2s; }
+
+#Ciano   { animation: reveal 0.5s ease forwards; animation-delay: 2.5s; }
+#Magenta { animation: reveal 0.5s ease forwards; animation-delay: 3s; }
+#Amarelo { animation: reveal 0.5s ease forwards; animation-delay: 3.5s; }
+
+#R_Costas { animation: reveal 0.5s ease forwards; animation-delay: 4s; }
+#R_Frente { animation: reveal 0.5s ease forwards; animation-delay: 4.5s; }
+#R_Tri    { animation: reveal 0.5s ease forwards; animation-delay: 5s; }
+#R_Fundo  { animation: reveal 0.5s ease forwards; animation-delay: 5.5s; }
+
+#Terceirizacao { animation: reveal 0.5s ease forwards; animation-delay: 6s; }
+
    ]]>
+   /* efeito de desenho para o Contorno */
+#Contorno {
+  stroke-dasharray: 30000; /* valor grande para cobrir o comprimento */
+  stroke-dashoffset: 30000;
+  animation: draw 0.5s linear forwards;
+  animation-delay: 0s; /* junto com Imprima */
+}
+
+@keyframes draw {
+  to { stroke-dashoffset: 0; }
+}
+
+/* animação genérica de fade + translate */
+@keyframes reveal {
+  from { opacity: 0; transform: translateY(20px); }
+  to   { opacity: 1; transform: translateY(0); }
+}
+
+/* ordem definida */
+#Imprima {
+  animation: reveal 0.5s ease forwards;
+  animation-delay: 0s; /* simultâneo com Contorno */
+}
+
+#C { animation: reveal 0.5s ease forwards; animation-delay: 0.5s; }
+#O1 { animation: reveal 0.5s ease forwards; animation-delay: 1s; }
+#O2 { animation: reveal 0.5s ease forwards; animation-delay: 1.5s; }
+#P  { animation: reveal 0.5s ease forwards; animation-delay: 2s; }
+
+#Ciano   { animation: reveal 0.5s ease forwards; animation-delay: 2.5s; }
+#Magenta { animation: reveal 0.5s ease forwards; animation-delay: 3s; }
+#Amarelo { animation: reveal 0.5s ease forwards; animation-delay: 3.5s; }
+
+#R_Costas { animation: reveal 0.5s ease forwards; animation-delay: 4s; }
+#R_Frente { animation: reveal 0.5s ease forwards; animation-delay: 4.5s; }
+#R_Tri    { animation: reveal 0.5s ease forwards; animation-delay: 5s; }
+#R_Fundo  { animation: reveal 0.5s ease forwards; animation-delay: 5.5s; }
+
+#Terceirizacao { animation: reveal 0.5s ease forwards; animation-delay: 6s; }
+
   </style>
   <linearGradient id="id0" gradientUnits="userSpaceOnUse" x1="18415.52" y1="4188.26" x2="22043.92" y2="4188.26">
    <stop offset="0" style="stop-opacity:1; stop-color:#008ACC"/>
