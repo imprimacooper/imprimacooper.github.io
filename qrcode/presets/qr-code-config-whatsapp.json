@@ -1,0 +1,14 @@
+{
+  "props": {
+    "data": "Have a beautiful day!",
+    "image": "https://upload.wikimedia.org/wikipedia/commons/6/6b/WhatsApp.svg",
+    "width": 2500,
+    "height": 2500,
+    "margin": 3,
+    "dotsOptions": { "color": "#000000", "type": "rounded" },
+    "cornersSquareOptions": { "color": "#1ed760", "type": "extra-rounded" },
+    "cornersDotOptions": { "color": "#1ed760", "type": "square" },
+    "imageOptions": { "margin": 3 }
+  },
+  "style": { "borderRadius": "15px", "background": "#ffffff" }
+}

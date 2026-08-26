@@ -1,0 +1,16 @@
+{
+  "props": {
+    "data": "Have a beautiful day!",
+    "image": "https://upload.wikimedia.org/wikipedia/commons/8/84/Spotify_icon.svg",
+    "width": 2500,
+    "height": 2500,
+    "margin": 3,
+    "dotsOptions": { "color": "#000000", "type": "rounded" },
+    "cornersSquareOptions": { "color": "#1ed760", "type": "extra-rounded" },
+    "cornersDotOptions": { "color": "#1ed760", "type": "square" },
+    "imageOptions": { "margin": 3 },
+    "qrOptions": { "errorCorrectionLevel": "M" }
+  },
+  "style": { "borderRadius": "15px", "background": "#ffffff" },
+  "frame": null
+}

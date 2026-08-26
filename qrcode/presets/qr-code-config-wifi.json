@@ -1,0 +1,14 @@
+{
+  "props": {
+    "data": "WIFI:T:WPA;S:Central Impressos_2.4G;P:Central1978;;",
+    "image": "https://upload.wikimedia.org/wikipedia/commons/a/ae/WiFi_Logo.svg",
+    "width": 2500,
+    "height": 2500,
+    "margin": 3,
+    "dotsOptions": { "color": "#000000", "type": "rounded" },
+    "cornersSquareOptions": { "color": "#000000", "type": "extra-rounded" },
+    "cornersDotOptions": { "color": "#000000", "type": "square" },
+    "imageOptions": { "margin": 3 }
+  },
+  "style": { "borderRadius": "15px", "background": "#ffffff" }
+}

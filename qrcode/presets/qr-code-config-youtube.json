@@ -1,0 +1,16 @@
+{
+  "props": {
+    "data": "https://www.youtube.com/watch?v=J91ti_MpdHA",
+    "image": "https://upload.wikimedia.org/wikipedia/commons/f/fd/YouTube_full-color_icon_%282024%29.svg",
+    "width": 2500,
+    "height": 2500,
+    "margin": 3,
+    "dotsOptions": { "color": "#000000", "type": "rounded" },
+    "cornersSquareOptions": { "color": "#ff0033", "type": "extra-rounded" },
+    "cornersDotOptions": { "color": "#ff0033", "type": "square" },
+    "imageOptions": { "margin": 3 },
+    "qrOptions": { "errorCorrectionLevel": "M" }
+  },
+  "style": { "borderRadius": "0px", "background": "#ffffff" },
+  "frame": null
+}

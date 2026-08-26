@@ -1,0 +1,14 @@
+{
+  "props": {
+    "data": "linkdetesteparatestarcomplexidade",
+    "image": "https://upload.wikimedia.org/wikipedia/commons/e/e7/Instagram_logo_2016.svg",
+    "width": 2500,
+    "height": 2500,
+    "margin": 3,
+    "dotsOptions": { "color": "#000000", "type": "rounded" },
+    "cornersSquareOptions": { "color": "#d300c5", "type": "extra-rounded" },
+    "cornersDotOptions": { "color": "#9e009e", "type": "square" },
+    "imageOptions": { "margin": 3 }
+  },
+  "style": { "borderRadius": "15px", "background": "#ffffff" }
+}
