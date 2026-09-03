@@ -1,0 +1,27 @@
+<svg xmlns="http://www.w3.org/2000/svg" xml:space="preserve" width="20.8261mm" height="19.9213mm" version="1.0" style="shape-rendering:geometricPrecision; text-rendering:geometricPrecision; image-rendering:optimizeQuality; fill-rule:evenodd; clip-rule:evenodd" viewBox="0 0 80.67 77.16">
+  <defs>
+    <style type="text/css"><![CDATA[
+      .fil2 { fill: url(#id0) }
+      .fil0 { fill: url(#id1) }
+      .fil1 { fill: url(#id2) }
+    ]]></style>
+    <linearGradient id="id0" gradientUnits="userSpaceOnUse" x1="79.16" y1="38.41" x2="0.99" y2="38.41">
+      <stop offset="0" style="stop-opacity:1;stop-color:#D7257C"/>
+      <stop offset="0.85098" style="stop-opacity:1;stop-color:#E04081"/>
+      <stop offset="1" style="stop-opacity:1;stop-color:#E04081"/>
+    </linearGradient>
+    <linearGradient id="id1" gradientUnits="userSpaceOnUse" x1="79.07" y1="67.46" x2="0.99" y2="67.46">
+      <stop offset="0" style="stop-opacity:1;stop-color:#F2CD21"/>
+      <stop offset="1" style="stop-opacity:1;stop-color:#FAE794"/>
+    </linearGradient>
+    <linearGradient id="id2" gradientUnits="userSpaceOnUse" x1="80.01" y1="9.45" x2="0.39" y2="9.45">
+      <stop offset="0" style="stop-opacity:1;stop-color:#1E8CCC"/>
+      <stop offset="1" style="stop-opacity:1;stop-color:#9AD6EB"/>
+    </linearGradient>
+  </defs>
+  <g>
+    <path class="fil0" d="M0.13 65.01c-1.16 12.53 5.4 12.32 13.58 12.1 1.22,-0.03 2.48,-0.07 3.75,-0.06 17.44 0.14 35.09,-0.04 52.57,-0.3 0.67,-0.01 1.31,0.03 1.92,0.07 1.92,0.13 3.63,0.26 5.64,-1.19 4.74,-3.42 4.18,-16.61 -2.8,-17.47l-68.94 -0.04c-3.06 0.64 -5.4,3.57 -5.71,6.88z"/>
+    <path class="fil1" d="M0.92 4.19c-0.77 1.83 -0.92 7.08 -0.48 9.09 0.72 3.24 3.32 5.37 6.39 5.61l66.25 0.02c7.12,-0.49 7.85,-6.06 7.19,-12.59 -0.32,-3.12 -3.15,-5.89 -6.01,-6.28l-67.66 -0.04c-2.4 0.32 -4.68,1.78 -5.69,4.19z"/>
+    <path class="fil2" d="M73.93 29.7l-0.05 0 -0.04 0 -68.03 0.01c-0.87 0.11 -3.23,1.47 -3.75,2.14 -0.3,0.39 -0.44,1.67 -0.93,2.18 0.06,0.67 -0.24,1.33 -0.26,2.02 -0.18,6.94 0.04,10.74 7.46,11.24 9.42,0.64 19.17,-0.29 28.58,-0.31 3.83,-0.01 7.68,0.02 11.53,0.05 6.63,0.05 13.26,0.11 19.82,-0.04 0.7,-0.01 1.45,0.02 2.21,0.05 2.66,0.11 5.54,0.22 7.41,-1.66 2.67,-2.7 1.96,-7.8 1.64,-11.36 0.07,-0.66 -0.73,-1.44 -1.13,-1.89 -1.23,-1.37 -2.59,-2.45 -4.46,-2.45z"/>
+  </g>
+</svg>
