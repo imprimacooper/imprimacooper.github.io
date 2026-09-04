@@ -81,6 +81,20 @@ function panel(width, height, depth, material, position, rotation) {
   scene.add(mesh);
 }
 
+function addFingerPreview(width, height, depth, thickness, material) {
+  if (jointType !== 'finger') return;
+  const fingerLength = getFingerLength();
+  const count = Math.max(2, Math.floor(width / fingerLength));
+  const step = width / count;
+  const tabDepth = Math.min(thickness * .75, 1.5);
+  for (let index = 0; index < count; index += 2) {
+    const tabWidth = step * .92;
+    const x = -width / 2 + index * step + step / 2;
+    panel(tabWidth, tabDepth, thickness, material, [x, height + tabDepth / 2, depth / 2 - thickness / 2]);
+    panel(tabWidth, tabDepth, thickness, material, [x, height + tabDepth / 2, -depth / 2 + thickness / 2]);
+  }
+}
+
 function pieceCount() {
   const basePieces = preset === 'open' ? 5 : 6;
   return basePieces + (hasDividers ? Math.max(0, getDividerRows() - 1) + Math.max(0, getDividerColumns() - 1) : 0);
@@ -115,6 +129,27 @@ function getFingerLength() {
 
 function getKerf() {
   return kerf;
+}
+
+function getMaterialEstimate(width, height, depth, thickness) {
+  const material = businessConfig.acrylic.find((item) => item.thickness === thickness);
+  if (!material) return { area: 0, value: 0 };
+  const wallArea = 2 * width * height + 2 * depth * height;
+  const lidArea = preset === 'lid' ? width * depth : 0;
+  let area = width * depth + wallArea + lidArea;
+  if (hasDividers) {
+    const dividerHeight = preset === 'open' ? height : height - 2 * thickness;
+    area += Math.max(0, getDividerRows() - 1) * (width - 2 * thickness) * dividerHeight;
+    area += Math.max(0, getDividerColumns() - 1) * (depth - 2 * thickness) * dividerHeight;
+  }
+  const squareMeters = area / 1000000;
+  return { area: squareMeters, value: squareMeters * material.pricePerSquareMeter };
+}
+
+function updateEstimate(width, height, depth, thickness) {
+  const estimate = getMaterialEstimate(width, height, depth, thickness);
+  const formatter = new Intl.NumberFormat('pt-BR', { style: 'currency', currency: businessConfig.currency });
+  $('estimate').textContent = `Valor estimado: ${formatter.format(estimate.value)} · ${estimate.area.toFixed(3)} m²`;
 }
 
 function loadMakerJs() {
@@ -172,6 +207,7 @@ function generateBox() {
   panel(outer.w, outer.h, thickness, material, [0, outer.h / 2, -outer.d / 2 + thickness / 2]);
   panel(thickness, outer.h, outer.d - 2 * thickness, material, [-outer.w / 2 + thickness / 2, outer.h / 2, 0]);
   panel(thickness, outer.h, outer.d - 2 * thickness, material, [outer.w / 2 - thickness / 2, outer.h / 2, 0]);
+  addFingerPreview(outer.w, outer.h, outer.d, thickness, material);
   if (preset === 'lid') panel(outer.w, thickness, outer.d, material, [0, outer.h + thickness / 2, 0]);
   if (hasDividers) {
     const rows = getDividerRows();
@@ -183,7 +219,7 @@ function generateBox() {
     }
     for (let index = 1; index < columns; index += 1) {
       const x = -outer.w / 2 + thickness + (outer.w - 2 * thickness) * index / columns;
-      panel(thickness / 2, dividerHeight, outer.d - 2 * thickness, material, [x, dividerHeight / 2, 0], [0, Math.PI / 2, 0]);
+      panel(thickness / 2, dividerHeight, outer.d - 2 * thickness, material, [x, dividerHeight / 2, 0]);
     }
   }
   camera.position.set(Math.max(150, outer.w * 1.8), Math.max(130, outer.h * 1.7), Math.max(180, outer.d * 2));
@@ -192,6 +228,7 @@ function generateBox() {
   const jointLabel = jointType === 'finger' ? `dedos de ${getFingerLength()} mm` : 'juntas planas';
   const dividerLabel = hasDividers ? ` · ${getDividerRows()} linhas x ${getDividerColumns()} colunas` : '';
   $('summary').innerHTML = `<strong>${Math.round(outer.w)} x ${Math.round(outer.d)} x ${Math.round(outer.h)} mm</strong> · ${pieceCount()} peças · ${jointLabel}${dividerLabel}`;
+  updateEstimate(outer.w, outer.h, outer.d, thickness);
   $('status').textContent = 'modelo atualizado';
   $('message').textContent = 'Dimensões externas calculadas com a espessura selecionada.';
 }
@@ -307,8 +344,15 @@ async function exportSVG() {
     const rowSlots = Array.from({ length: Math.max(0, columns - 1) }, (_, index) => (w - 2 * t) * (index + 1) / columns);
     const columnSlots = Array.from({ length: Math.max(0, rows - 1) }, (_, index) => (d - 2 * t) * (index + 1) / rows);
     const dividerHeight = preset === 'open' ? h : h - 2 * t;
-    for (let index = 1; index < rows; index += 1) addDividerPiece(model, `divider-row-${index}`, w * 2 + d + gap * 4, d + gap * (3 + index), w - 2 * t, dividerHeight, t, rowSlots, true);
-    for (let index = 1; index < columns; index += 1) addDividerPiece(model, `divider-column-${index}`, w * 3 + d * 2 + gap * (5 + index), d + gap, d - 2 * t, dividerHeight, t, columnSlots, false);
+    const dividerX = w * 2 + d + gap * 4;
+    const rowLayoutGap = gap * 1.5;
+    const columnX = dividerX + w + rowLayoutGap;
+    for (let index = 1; index < rows; index += 1) {
+      addDividerPiece(model, `divider-row-${index}`, dividerX, d + gap * 3 + (index - 1) * (dividerHeight + rowLayoutGap), w - 2 * t, dividerHeight, t, rowSlots, true);
+    }
+    for (let index = 1; index < columns; index += 1) {
+      addDividerPiece(model, `divider-column-${index}`, columnX, d + gap * 3 + (index - 1) * (dividerHeight + rowLayoutGap), d - 2 * t, dividerHeight, t, columnSlots, false);
+    }
   }
   const svg = makerjs.exporter.toSVG(model, { stroke: '#000000', strokeWidth: .1, fill: 'none' }).replace(/<svg /, '<svg id="caixa-laser" ');
   const url = URL.createObjectURL(new Blob([svg], { type: 'image/svg+xml' }));
