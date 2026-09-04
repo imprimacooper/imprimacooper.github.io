@@ -12,6 +12,7 @@ let selectedColor = 'black';
 let preset = 'open';
 let jointType = 'finger';
 let hasDividers = false;
+let cameraViewInitialized = false;
 
 const $ = (id) => document.getElementById(id);
 const colors = {
@@ -84,37 +85,6 @@ function panel(width, height, depth, material, position, rotation) {
     mesh.add(edges);
   }
   scene.add(mesh);
-}
-
-function addFingerPreview(width, height, depth, thickness, material) {
-  if (jointType !== 'finger') return;
-  const fingerLength = getFingerLength();
-  const tabHeight = Math.max(.5, thickness * .45);
-  const horizontalCount = Math.max(2, Math.floor(width / fingerLength));
-  const horizontalStep = width / horizontalCount;
-  const depthCount = Math.max(2, Math.floor(depth / fingerLength));
-  const depthStep = depth / depthCount;
-  const tabClearance = Math.min(getKerf(), horizontalStep * .08);
-  for (let index = 0; index < horizontalCount; index += 2) {
-    const x = -width / 2 + horizontalStep * (index + .5);
-    panel(horizontalStep - tabClearance, tabHeight, thickness, material, [x, -tabHeight / 2, depth / 2 - thickness / 2]);
-    panel(horizontalStep - tabClearance, tabHeight, thickness, material, [x, -tabHeight / 2, -depth / 2 + thickness / 2]);
-  }
-  for (let index = 0; index < depthCount; index += 2) {
-    const z = -depth / 2 + depthStep * (index + .5);
-    panel(thickness, tabHeight, depthStep - tabClearance, material, [width / 2 - thickness / 2, -tabHeight / 2, z]);
-    panel(thickness, tabHeight, depthStep - tabClearance, material, [-width / 2 + thickness / 2, -tabHeight / 2, z]);
-  }
-  const verticalCount = Math.max(2, Math.floor(height / fingerLength));
-  const verticalStep = height / verticalCount;
-  for (let index = 0; index < verticalCount; index += 2) {
-    const y = verticalStep * (index + .5);
-    const verticalTab = verticalStep - tabClearance;
-    panel(thickness, verticalTab, thickness, material, [-width / 2 - thickness / 2, y, depth / 2 - thickness / 2]);
-    panel(thickness, verticalTab, thickness, material, [width / 2 + thickness / 2, y, depth / 2 - thickness / 2]);
-    panel(thickness, verticalTab, thickness, material, [-width / 2 - thickness / 2, y, -depth / 2 + thickness / 2]);
-    panel(thickness, verticalTab, thickness, material, [width / 2 + thickness / 2, y, -depth / 2 + thickness / 2]);
-  }
 }
 
 function addLidFingerPreview(width, height, depth, thickness, material) {
@@ -258,7 +228,6 @@ function generateBox() {
   panel(outer.w, outer.h, thickness, material, [0, outer.h / 2, -outer.d / 2 + thickness / 2]);
   panel(thickness, outer.h, outer.d - 2 * thickness, material, [-outer.w / 2 + thickness / 2, outer.h / 2, 0]);
   panel(thickness, outer.h, outer.d - 2 * thickness, material, [outer.w / 2 - thickness / 2, outer.h / 2, 0]);
-  addFingerPreview(outer.w, outer.h, outer.d, thickness, material);
   if (preset === 'lid') {
     panel(outer.w, thickness, outer.d, material, [0, outer.h + thickness / 2, 0]);
     addLidFingerPreview(outer.w, outer.h, outer.d, thickness, material);
@@ -276,9 +245,12 @@ function generateBox() {
       panel(thickness / 2, dividerHeight, outer.d - 2 * thickness, material, [x, dividerHeight / 2, 0]);
     }
   }
-  camera.position.set(Math.max(150, outer.w * 1.8), Math.max(130, outer.h * 1.7), Math.max(180, outer.d * 2));
-  controls.target.set(0, outer.h / 2, 0);
-  controls.update();
+  if (!cameraViewInitialized) {
+    camera.position.set(Math.max(150, outer.w * 1.8), Math.max(130, outer.h * 1.7), Math.max(180, outer.d * 2));
+    controls.target.set(0, outer.h / 2, 0);
+    controls.update();
+    cameraViewInitialized = true;
+  }
   const jointLabel = jointType === 'finger' ? `dedos de ${getFingerLength()} mm` : 'juntas planas';
   const dividerLabel = hasDividers ? ` · ${getDividerRows()} linhas x ${getDividerColumns()} colunas` : '';
   $('summary').innerHTML = `<strong>${Math.round(outer.w)} x ${Math.round(outer.d)} x ${Math.round(outer.h)} mm</strong> · ${pieceCount()} peças · ${jointLabel}${dividerLabel}`;
@@ -295,11 +267,11 @@ function addRect(model, name, x, y, width, height, thickness, edges) {
   model.models[name] = rect;
 }
 
-function fingerPoints(width, height, thickness, fingerLength, kerf, edges = { bottom: true, right: true, top: true, left: true }) {
+function fingerPoints(width, height, thickness, fingerLength, kerf, edges = { bottom: 'notch-odd', right: 'notch-odd', top: 'notch-odd', left: 'notch-odd' }) {
   const horizontalCount = Math.max(2, Math.floor(width / fingerLength));
   const verticalCount = Math.max(2, Math.floor(height / fingerLength));
   const points = [];
-  const addEdge = (start, end, count, outward, enabled) => {
+  const addEdge = (start, end, count, outward, mode) => {
     const stepX = (end[0] - start[0]) / count;
     const stepY = (end[1] - start[1]) / count;
     for (let index = 0; index < count; index += 1) {
@@ -307,11 +279,10 @@ function fingerPoints(width, height, thickness, fingerLength, kerf, edges = { bo
       const ay = start[1] + stepY * index;
       const bx = start[0] + stepX * (index + 1);
       const by = start[1] + stepY * (index + 1);
-      const finger = index % 2 === 0;
-      const direction = enabled === 'in' ? -1 : 1;
-      const normal = [outward[0] * direction * (thickness - kerf / 2), outward[1] * direction * (thickness - kerf / 2)];
+      const notch = index > 0 && index < count - 1 && (mode === 'notch-even' ? index % 2 === 0 : index % 2 === 1);
+      const normal = [outward[0] * -(thickness + kerf / 2), outward[1] * -(thickness + kerf / 2)];
       points.push([ax, ay]);
-      if (enabled && finger) {
+      if (mode && notch) {
         points.push([ax + normal[0], ay + normal[1]]);
         points.push([bx + normal[0], by + normal[1]]);
       }
@@ -387,18 +358,24 @@ async function exportSVG() {
   const { w, h, d, t } = current;
   const model = { models: {}, paths: {} };
   const gap = 2 * t + layoutGap;
-  addRect(model, 'base', 0, 0, w, d, t, { bottom: true, right: true, top: true, left: true });
-  const wallEdges = {
-    bottom: 'in',
-    right: 'in',
-    top: preset === 'lid' ? 'out' : false,
-    left: 'in'
+  addRect(model, 'base', 0, 0, w, d, t, { bottom: 'notch-odd', right: 'notch-odd', top: 'notch-odd', left: 'notch-odd' });
+  const frontBackEdges = {
+    bottom: 'notch-even',
+    right: 'notch-odd',
+    top: preset === 'lid' ? 'notch-even' : false,
+    left: 'notch-odd'
   };
-  addRect(model, 'front', 0, d + gap, w, h, t, wallEdges);
-  addRect(model, 'back', w + gap, d + gap, w, h, t, wallEdges);
-  addRect(model, 'left', w * 2 + gap * 2, d + gap, d, h, t, wallEdges);
-  addRect(model, 'right', w * 2 + d + gap * 3, d + gap, d, h, t, wallEdges);
-  if (preset === 'lid') addRect(model, 'lid', 0, d + h + gap * 2, w, d, t, { bottom: 'in', right: 'in', top: 'in', left: 'in' });
+  const sideEdges = {
+    bottom: 'notch-even',
+    right: 'notch-even',
+    top: preset === 'lid' ? 'notch-even' : false,
+    left: 'notch-even'
+  };
+  addRect(model, 'front', 0, d + gap, w, h, t, frontBackEdges);
+  addRect(model, 'back', w + gap, d + gap, w, h, t, frontBackEdges);
+  addRect(model, 'left', w * 2 + gap * 2, d + gap, d, h, t, sideEdges);
+  addRect(model, 'right', w * 2 + d + gap * 3, d + gap, d, h, t, sideEdges);
+  if (preset === 'lid') addRect(model, 'lid', 0, d + h + gap * 2, w, d, t, { bottom: 'notch-odd', right: 'notch-odd', top: 'notch-odd', left: 'notch-odd' });
   if (hasDividers) {
     const rows = getDividerRows();
     const columns = getDividerColumns();
