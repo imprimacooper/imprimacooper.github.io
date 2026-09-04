@@ -81,6 +81,35 @@ function panel(width, height, depth, material, position, rotation) {
   scene.add(mesh);
 }
 
+function addFingerPreview(width, height, depth, thickness, material) {
+  if (jointType !== 'finger') return;
+  const fingerLength = getFingerLength();
+  const tabHeight = Math.max(.5, thickness * .45);
+  const horizontalCount = Math.max(2, Math.floor(width / fingerLength));
+  const horizontalStep = width / horizontalCount;
+  const depthCount = Math.max(2, Math.floor(depth / fingerLength));
+  const depthStep = depth / depthCount;
+  for (let index = 0; index < horizontalCount; index += 2) {
+    const x = -width / 2 + horizontalStep * (index + .5);
+    panel(horizontalStep * .82, tabHeight, thickness, material, [x, -tabHeight / 2, depth / 2 - thickness / 2]);
+    panel(horizontalStep * .82, tabHeight, thickness, material, [x, -tabHeight / 2, -depth / 2 + thickness / 2]);
+  }
+  for (let index = 0; index < depthCount; index += 2) {
+    const z = -depth / 2 + depthStep * (index + .5);
+    panel(thickness, tabHeight, depthStep * .82, material, [width / 2 - thickness / 2, -tabHeight / 2, z]);
+    panel(thickness, tabHeight, depthStep * .82, material, [-width / 2 + thickness / 2, -tabHeight / 2, z]);
+  }
+  const verticalCount = Math.max(2, Math.floor(height / fingerLength));
+  const verticalStep = height / verticalCount;
+  for (let index = 0; index < verticalCount; index += 2) {
+    const y = verticalStep * (index + .5);
+    panel(thickness, verticalStep * .82, thickness, material, [-width / 2 - thickness / 2, y, depth / 2 - thickness / 2]);
+    panel(thickness, verticalStep * .82, thickness, material, [width / 2 + thickness / 2, y, depth / 2 - thickness / 2]);
+    panel(thickness, verticalStep * .82, thickness, material, [-width / 2 - thickness / 2, y, -depth / 2 + thickness / 2]);
+    panel(thickness, verticalStep * .82, thickness, material, [width / 2 + thickness / 2, y, -depth / 2 + thickness / 2]);
+  }
+}
+
 function pieceCount() {
   const basePieces = preset === 'open' ? 5 : 6;
   return basePieces + (hasDividers ? Math.max(0, getDividerRows() - 1) + Math.max(0, getDividerColumns() - 1) : 0);
@@ -194,6 +223,7 @@ function generateBox() {
   panel(outer.w, outer.h, thickness, material, [0, outer.h / 2, -outer.d / 2 + thickness / 2]);
   panel(thickness, outer.h, outer.d - 2 * thickness, material, [-outer.w / 2 + thickness / 2, outer.h / 2, 0]);
   panel(thickness, outer.h, outer.d - 2 * thickness, material, [outer.w / 2 - thickness / 2, outer.h / 2, 0]);
+  addFingerPreview(outer.w, outer.h, outer.d, thickness, material);
   if (preset === 'lid') panel(outer.w, thickness, outer.d, material, [0, outer.h + thickness / 2, 0]);
   if (hasDividers) {
     const rows = getDividerRows();
