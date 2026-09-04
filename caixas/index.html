@@ -27,23 +27,29 @@
   <script src="https://cdn.jsdelivr.net/npm/makerjs@0.15.0/dist/browser.maker.js"></script>
 
   <script>
-    let scene, camera, renderer, controls;
+    let scene, camera, renderer, controls, boxMesh;
 
     function init3D() {
       scene = new THREE.Scene();
-      camera = new THREE.PerspectiveCamera(45, 600/400, 1, 1000);
-      camera.position.set(150, 150, 150);
+      camera = new THREE.PerspectiveCamera(45, 600/400, 1, 2000);
+      camera.position.set(200, 200, 200);
 
-      renderer = new THREE.WebGLRenderer();
+      renderer = new THREE.WebGLRenderer({antialias:true});
       renderer.setSize(600, 400);
       document.getElementById('preview').appendChild(renderer.domElement);
 
       controls = new THREE.OrbitControls(camera, renderer.domElement);
-      controls.update();
 
-      const light = new THREE.DirectionalLight(0xffffff, 1);
-      light.position.set(100, 100, 100).normalize();
-      scene.add(light);
+      // Luzes
+      const ambient = new THREE.AmbientLight(0x404040);
+      scene.add(ambient);
+      const directional = new THREE.DirectionalLight(0xffffff, 1);
+      directional.position.set(100, 200, 100);
+      scene.add(directional);
+
+      // Chão
+      const grid = new THREE.GridHelper(500, 50);
+      scene.add(grid);
 
       animate();
     }
@@ -57,26 +63,21 @@
       const w = parseFloat(document.getElementById('width').value);
       const h = parseFloat(document.getElementById('height').value);
       const d = parseFloat(document.getElementById('depth').value);
-      const t = parseFloat(document.getElementById('thickness').value);
 
-      // Limpar cena
-      while(scene.children.length > 0){ scene.remove(scene.children[0]); }
-
-      const material = new THREE.MeshLambertMaterial({ color: 0xaaaaaa, transparent: true, opacity: 0.8 });
+      if (boxMesh) scene.remove(boxMesh);
 
       const geometry = new THREE.BoxGeometry(w, h, d);
-      const mesh = new THREE.Mesh(geometry, material);
-      scene.add(mesh);
+      const material = new THREE.MeshPhongMaterial({color: 0x999999, transparent:true, opacity:0.8});
+      boxMesh = new THREE.Mesh(geometry, material);
+      scene.add(boxMesh);
 
-      // Guardar dados para exportação
-      window.boxParams = { w, h, d, t };
+      window.boxParams = { w, h, d };
     }
 
     function exportSVG() {
-      const { w, h, d, t } = window.boxParams;
+      const { w, h, d } = window.boxParams;
       const makerjs = window.makerjs;
 
-      // Exemplo simples: apenas retângulos das faces
       const model = {
         models: {
           frente: new makerjs.models.Rectangle(w, h),
