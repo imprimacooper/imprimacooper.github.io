@@ -69,7 +69,7 @@ function panel(width, height, depth, material, position, rotation) {
 }
 
 function pieceCount() {
-  const basePieces = preset === 'open' ? 5 : (preset === 'hinge' ? 7 : 6);
+  const basePieces = preset === 'open' ? 5 : 6;
   return basePieces + (hasDividers ? Math.max(0, getDividerRows() - 1) + Math.max(0, getDividerColumns() - 1) : 0);
 }
 
@@ -158,30 +158,18 @@ function generateBox() {
   panel(outer.w, outer.h, thickness, material, [0, outer.h / 2, -outer.d / 2 + thickness / 2]);
   panel(thickness, outer.h, outer.d - 2 * thickness, material, [-outer.w / 2 + thickness / 2, outer.h / 2, 0]);
   panel(thickness, outer.h, outer.d - 2 * thickness, material, [outer.w / 2 - thickness / 2, outer.h / 2, 0]);
-  if (preset === 'lid' || preset === 'hinge') panel(outer.w, thickness, outer.d, material, [0, outer.h + thickness / 2, 0]);
-  if (preset === 'hinge') {
-    const hingeMaterial = new THREE.MeshStandardMaterial({ color: 0x5d6664, roughness: .42, metalness: .5 });
-    for (let index = -1; index <= 1; index += 2) {
-      const barrel = new THREE.Mesh(new THREE.CylinderGeometry(thickness * 1.25, thickness * 1.25, outer.w / 3, 20), hingeMaterial);
-      barrel.rotation.z = Math.PI / 2;
-      barrel.position.set(index * outer.w / 3, outer.h + thickness * 1.15, outer.d / 2 - thickness);
-      scene.add(barrel);
-    }
-    const pin = new THREE.Mesh(new THREE.CylinderGeometry(thickness * .35, thickness * .35, outer.w * .96, 16), hingeMaterial);
-    pin.rotation.z = Math.PI / 2;
-    pin.position.set(0, outer.h + thickness * 1.15, outer.d / 2 - thickness);
-    scene.add(pin);
-  }
+  if (preset === 'lid') panel(outer.w, thickness, outer.d, material, [0, outer.h + thickness / 2, 0]);
   if (hasDividers) {
     const rows = getDividerRows();
     const columns = getDividerColumns();
+    const dividerHeight = preset === 'open' ? outer.h : outer.h - 2 * thickness;
     for (let index = 1; index < rows; index += 1) {
       const z = -outer.d / 2 + thickness + (outer.d - 2 * thickness) * index / rows;
-      panel(outer.w - 2 * thickness, outer.h - 2 * thickness, thickness / 2, material, [0, outer.h / 2, z]);
+      panel(outer.w - 2 * thickness, dividerHeight, thickness / 2, material, [0, dividerHeight / 2, z]);
     }
     for (let index = 1; index < columns; index += 1) {
       const x = -outer.w / 2 + thickness + (outer.w - 2 * thickness) * index / columns;
-      panel(thickness / 2, outer.h - 2 * thickness, outer.d - 2 * thickness, material, [x, outer.h / 2, 0], [0, Math.PI / 2, 0]);
+      panel(thickness / 2, dividerHeight, outer.d - 2 * thickness, material, [x, dividerHeight / 2, 0], [0, Math.PI / 2, 0]);
     }
   }
   camera.position.set(Math.max(150, outer.w * 1.8), Math.max(130, outer.h * 1.7), Math.max(180, outer.d * 2));
@@ -299,20 +287,16 @@ async function exportSVG() {
   addRect(model, 'left', w * 2 + gap * 2, d + gap, d, h, t, h);
   addRect(model, 'right', w * 2 + d + gap * 3, d + gap, d, h, t, h);
   if (preset !== 'open') addRect(model, 'lid', 0, d + h + gap * 2, w, d, t, w);
-  if (preset === 'hinge') {
-    addHingePiece(model, 'hinge-barrel-left', 0, d + h + gap * 3, w / 3, t * 3, t);
-    addHingePiece(model, 'hinge-barrel-right', w / 3 + gap, d + h + gap * 3, w / 3, t * 3, t);
-    addHingePiece(model, 'hinge-pin', 2 * w / 3 + gap * 2, d + h + gap * 3, w / 3, t, t);
-  }
   if (hasDividers) {
     const rows = getDividerRows();
     const columns = getDividerColumns();
     const rowSlots = Array.from({ length: Math.max(0, columns - 1) }, (_, index) => (w - 2 * t) * (index + 1) / columns);
     const columnSlots = Array.from({ length: Math.max(0, rows - 1) }, (_, index) => (d - 2 * t) * (index + 1) / rows);
-    for (let index = 1; index < rows; index += 1) addDividerPiece(model, `divider-row-${index}`, w * 2 + d + gap * 4, d + gap * (3 + index), w - 2 * t, h - 2 * t, t, rowSlots, true);
-    for (let index = 1; index < columns; index += 1) addDividerPiece(model, `divider-column-${index}`, w * 3 + d * 2 + gap * (5 + index), d + gap, d - 2 * t, h - 2 * t, t, columnSlots, false);
+    const dividerHeight = preset === 'open' ? h : h - 2 * t;
+    for (let index = 1; index < rows; index += 1) addDividerPiece(model, `divider-row-${index}`, w * 2 + d + gap * 4, d + gap * (3 + index), w - 2 * t, dividerHeight, t, rowSlots, true);
+    for (let index = 1; index < columns; index += 1) addDividerPiece(model, `divider-column-${index}`, w * 3 + d * 2 + gap * (5 + index), d + gap, d - 2 * t, dividerHeight, t, columnSlots, false);
   }
-  const svg = makerjs.exporter.toSVG(model, { stroke: 'none', fill: 'none' }).replace(/<svg /, '<svg id="caixa-laser" ');
+  const svg = makerjs.exporter.toSVG(model, { stroke: '#000000', strokeWidth: .1, fill: 'none' }).replace(/<svg /, '<svg id="caixa-laser" ');
   const url = URL.createObjectURL(new Blob([svg], { type: 'image/svg+xml' }));
   const link = document.createElement('a');
   link.href = url;
@@ -320,14 +304,6 @@ async function exportSVG() {
   link.click();
   URL.revokeObjectURL(url);
   $('message').textContent = 'SVG planificado exportado com encaixes.';
-}
-
-function addHingePiece(model, name, x, y, width, height, radius) {
-  const piece = new makerjs.models.Rectangle(width, height);
-  makerjs.model.move(piece, [x, y]);
-  model.models[name] = piece;
-  model.paths[`${name}-hole-a`] = new makerjs.paths.Circle([x + radius * 2, y + height / 2], radius);
-  model.paths[`${name}-hole-b`] = new makerjs.paths.Circle([x + width - radius * 2, y + height / 2], radius);
 }
 
 document.querySelectorAll('.preset').forEach((button) => button.addEventListener('click', () => {
