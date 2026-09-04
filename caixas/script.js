@@ -15,9 +15,9 @@ let hasDividers = false;
 
 const $ = (id) => document.getElementById(id);
 const colors = {
-  black: { hex: 0x181a1b, roughness: .14, clearcoat: 1, clearcoatRoughness: .07, opacity: .98 },
-  white: { hex: 0xd9dad6, roughness: .17, clearcoat: 1, clearcoatRoughness: .09, opacity: .98 },
-  clear: { hex: 0xd8dedb, roughness: .08, transmission: .82, thickness: .8, ior: 1.46, opacity: .58 }
+  black: { hex: 0x181a1b, edge: 0x4b5052, edgeOpacity: .7, roughness: .14, clearcoat: 1, clearcoatRoughness: .07, opacity: .98 },
+  white: { hex: 0xd9dad6, edge: 0x8c9291, edgeOpacity: .58, roughness: .17, clearcoat: 1, clearcoatRoughness: .09, opacity: .98 },
+  clear: { hex: 0xd8dedb, edge: 0x74807d, edgeOpacity: .48, roughness: .08, transmission: .82, thickness: .8, ior: 1.46, opacity: .58 }
 };
 const kerf = businessConfig.kerf;
 
@@ -78,6 +78,11 @@ function panel(width, height, depth, material, position, rotation) {
   const mesh = new THREE.Mesh(new THREE.BoxGeometry(width, height, depth), material);
   mesh.position.set(...position);
   if (rotation) mesh.rotation.set(...rotation);
+  const edgeMaterial = material.userData.edgeMaterial;
+  if (edgeMaterial) {
+    const edges = new THREE.LineSegments(new THREE.EdgesGeometry(mesh.geometry), edgeMaterial);
+    mesh.add(edges);
+  }
   scene.add(mesh);
 }
 
@@ -217,6 +222,13 @@ function generateBox() {
     polygonOffset: true,
     polygonOffsetFactor: 1,
     polygonOffsetUnits: 1
+  });
+  material.userData.edgeMaterial = new THREE.LineBasicMaterial({
+    color: color.edge,
+    transparent: true,
+    opacity: color.edgeOpacity,
+    depthTest: true,
+    depthWrite: false
   });
   panel(outer.w, thickness, outer.d, material, [0, thickness / 2, 0]);
   panel(outer.w, outer.h, thickness, material, [0, outer.h / 2, outer.d / 2 - thickness / 2]);
