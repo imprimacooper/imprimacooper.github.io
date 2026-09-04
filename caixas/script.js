@@ -305,10 +305,13 @@ function fingerPoints(width, height, thickness, fingerLength, kerf, edges = { bo
       const ay = start[1] + stepY * index;
       const bx = start[0] + stepX * (index + 1);
       const by = start[1] + stepY * (index + 1);
-      const notch = index > 0 && index < count - 1 && (mode === 'notch-even' ? index % 2 === 0 : index % 2 === 1);
-      const normal = [outward[0] * -(thickness + kerf / 2), outward[1] * -(thickness + kerf / 2)];
+      const isNotch = mode && mode.startsWith('notch') && (mode === 'notch-even' ? index % 2 === 0 : index % 2 === 1);
+      const isTab = mode && mode.startsWith('tab') && (mode === 'tab-even' ? index % 2 === 0 : index % 2 === 1);
+      const engagement = isNotch ? thickness + kerf / 2 : thickness - kerf / 2;
+      const direction = isTab ? 1 : -1;
+      const normal = [outward[0] * direction * engagement, outward[1] * direction * engagement];
       points.push([ax, ay]);
-      if (mode && notch) {
+      if ((isNotch || isTab) && index > 0 && index < count - 1) {
         points.push([ax + normal[0], ay + normal[1]]);
         points.push([bx + normal[0], by + normal[1]]);
       }
@@ -384,24 +387,24 @@ async function exportSVG() {
   const { w, h, d, t } = current;
   const model = { models: {}, paths: {} };
   const gap = 2 * t + layoutGap;
-  addRect(model, 'base', 0, 0, w, d, t, { bottom: 'notch-odd', right: 'notch-odd', top: 'notch-odd', left: 'notch-odd' });
+  addRect(model, 'base', 0, 0, w, d, t, { bottom: 'tab-odd', right: 'tab-odd', top: 'tab-odd', left: 'tab-odd' });
   const frontBackEdges = {
-    bottom: 'notch-even',
-    right: 'notch-odd',
-    top: preset === 'lid' ? 'notch-even' : false,
-    left: 'notch-odd'
+    bottom: 'notch-odd',
+    right: 'notch-even',
+    top: preset === 'lid' ? 'notch-odd' : false,
+    left: 'notch-even'
   };
   const sideEdges = {
-    bottom: 'notch-even',
-    right: 'notch-even',
-    top: preset === 'lid' ? 'notch-even' : false,
-    left: 'notch-even'
+    bottom: 'notch-odd',
+    right: 'notch-odd',
+    top: preset === 'lid' ? 'notch-odd' : false,
+    left: 'notch-odd'
   };
   addRect(model, 'front', 0, d + gap, w, h, t, frontBackEdges);
   addRect(model, 'back', w + gap, d + gap, w, h, t, frontBackEdges);
   addRect(model, 'left', w * 2 + gap * 2, d + gap, d, h, t, sideEdges);
   addRect(model, 'right', w * 2 + d + gap * 3, d + gap, d, h, t, sideEdges);
-  if (preset === 'lid') addRect(model, 'lid', 0, d + h + gap * 2, w, d, t, { bottom: 'notch-odd', right: 'notch-odd', top: 'notch-odd', left: 'notch-odd' });
+  if (preset === 'lid') addRect(model, 'lid', 0, d + h + gap * 2, w, d, t, { bottom: 'tab-odd', right: 'tab-odd', top: 'tab-odd', left: 'tab-odd' });
   if (hasDividers) {
     const rows = getDividerRows();
     const columns = getDividerColumns();
