@@ -81,20 +81,6 @@ function panel(width, height, depth, material, position, rotation) {
   scene.add(mesh);
 }
 
-function addFingerPreview(width, height, depth, thickness, material) {
-  if (jointType !== 'finger') return;
-  const fingerLength = getFingerLength();
-  const count = Math.max(2, Math.floor(width / fingerLength));
-  const step = width / count;
-  const tabDepth = Math.min(thickness * .75, 1.5);
-  for (let index = 0; index < count; index += 2) {
-    const tabWidth = step * .92;
-    const x = -width / 2 + index * step + step / 2;
-    panel(tabWidth, tabDepth, thickness, material, [x, height + tabDepth / 2, depth / 2 - thickness / 2]);
-    panel(tabWidth, tabDepth, thickness, material, [x, height + tabDepth / 2, -depth / 2 + thickness / 2]);
-  }
-}
-
 function pieceCount() {
   const basePieces = preset === 'open' ? 5 : 6;
   return basePieces + (hasDividers ? Math.max(0, getDividerRows() - 1) + Math.max(0, getDividerColumns() - 1) : 0);
@@ -197,6 +183,7 @@ function generateBox() {
     ior: color.ior || 1.5,
     transparent: color.opacity < 1,
     opacity: color.opacity,
+    depthWrite: color.opacity >= .9,
     side: THREE.DoubleSide,
     polygonOffset: true,
     polygonOffsetFactor: 1,
@@ -207,7 +194,6 @@ function generateBox() {
   panel(outer.w, outer.h, thickness, material, [0, outer.h / 2, -outer.d / 2 + thickness / 2]);
   panel(thickness, outer.h, outer.d - 2 * thickness, material, [-outer.w / 2 + thickness / 2, outer.h / 2, 0]);
   panel(thickness, outer.h, outer.d - 2 * thickness, material, [outer.w / 2 - thickness / 2, outer.h / 2, 0]);
-  addFingerPreview(outer.w, outer.h, outer.d, thickness, material);
   if (preset === 'lid') panel(outer.w, thickness, outer.d, material, [0, outer.h + thickness / 2, 0]);
   if (hasDividers) {
     const rows = getDividerRows();
@@ -233,19 +219,19 @@ function generateBox() {
   $('message').textContent = 'Dimensões externas calculadas com a espessura selecionada.';
 }
 
-function addRect(model, name, x, y, width, height, thickness, edge) {
+function addRect(model, name, x, y, width, height, thickness, edges) {
   const rect = jointType === 'finger'
-    ? new makerjs.models.ConnectTheDots(true, fingerPoints(width, height, thickness, getFingerLength(), getKerf()))
+    ? new makerjs.models.ConnectTheDots(true, fingerPoints(width, height, thickness, getFingerLength(), getKerf(), edges))
     : new makerjs.models.Rectangle(width, height);
   makerjs.model.move(rect, [x, y]);
   model.models[name] = rect;
 }
 
-function fingerPoints(width, height, thickness, fingerLength, kerf) {
+function fingerPoints(width, height, thickness, fingerLength, kerf, edges = { bottom: true, right: true, top: true, left: true }) {
   const horizontalCount = Math.max(2, Math.floor(width / fingerLength));
   const verticalCount = Math.max(2, Math.floor(height / fingerLength));
   const points = [];
-  const addEdge = (start, end, count, outward) => {
+  const addEdge = (start, end, count, outward, enabled) => {
     const stepX = (end[0] - start[0]) / count;
     const stepY = (end[1] - start[1]) / count;
     for (let index = 0; index < count; index += 1) {
@@ -254,19 +240,20 @@ function fingerPoints(width, height, thickness, fingerLength, kerf) {
       const bx = start[0] + stepX * (index + 1);
       const by = start[1] + stepY * (index + 1);
       const finger = index % 2 === 0;
-      const normal = [outward[0] * (thickness - kerf / 2), outward[1] * (thickness - kerf / 2)];
+      const direction = enabled === 'in' ? -1 : 1;
+      const normal = [outward[0] * direction * (thickness - kerf / 2), outward[1] * direction * (thickness - kerf / 2)];
       points.push([ax, ay]);
-      if (finger) {
+      if (enabled && finger) {
         points.push([ax + normal[0], ay + normal[1]]);
         points.push([bx + normal[0], by + normal[1]]);
       }
       points.push([bx, by]);
     }
   };
-  addEdge([0, 0], [width, 0], horizontalCount, [0, -1]);
-  addEdge([width, 0], [width, height], verticalCount, [1, 0]);
-  addEdge([width, height], [0, height], horizontalCount, [0, 1]);
-  addEdge([0, height], [0, 0], verticalCount, [-1, 0]);
+  addEdge([0, 0], [width, 0], horizontalCount, [0, -1], edges.bottom);
+  addEdge([width, 0], [width, height], verticalCount, [1, 0], edges.right);
+  addEdge([width, height], [0, height], horizontalCount, [0, 1], edges.top);
+  addEdge([0, height], [0, 0], verticalCount, [-1, 0], edges.left);
   return points;
 }
 
@@ -332,12 +319,18 @@ async function exportSVG() {
   const { w, h, d, t } = current;
   const model = { models: {}, paths: {} };
   const gap = 2 * t + layoutGap;
-  addRect(model, 'base', 0, 0, w, d, t, w);
-  addRect(model, 'front', 0, d + gap, w, h, t, w);
-  addRect(model, 'back', w + gap, d + gap, w, h, t, w);
-  addRect(model, 'left', w * 2 + gap * 2, d + gap, d, h, t, h);
-  addRect(model, 'right', w * 2 + d + gap * 3, d + gap, d, h, t, h);
-  if (preset !== 'open') addRect(model, 'lid', 0, d + h + gap * 2, w, d, t, w);
+  addRect(model, 'base', 0, 0, w, d, t, { bottom: true, right: true, top: true, left: true });
+  const wallEdges = {
+    bottom: 'in',
+    right: 'in',
+    top: preset === 'lid' ? 'out' : false,
+    left: 'in'
+  };
+  addRect(model, 'front', 0, d + gap, w, h, t, wallEdges);
+  addRect(model, 'back', w + gap, d + gap, w, h, t, wallEdges);
+  addRect(model, 'left', w * 2 + gap * 2, d + gap, d, h, t, wallEdges);
+  addRect(model, 'right', w * 2 + d + gap * 3, d + gap, d, h, t, wallEdges);
+  if (preset === 'lid') addRect(model, 'lid', 0, d + h + gap * 2, w, d, t, { bottom: 'in', right: 'in', top: 'in', left: 'in' });
   if (hasDividers) {
     const rows = getDividerRows();
     const columns = getDividerColumns();

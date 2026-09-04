@@ -75,9 +75,8 @@ input:focus { outline: 3px solid rgba(7,162,209,.16); border-color: var(--cyan);
 .preview-label, .status { position: absolute; color: var(--muted); pointer-events: none; font-size: 10px; letter-spacing: .1em; text-transform: uppercase; }
 .preview-label { top: 22px; left: 25px; } .status { right: 25px; bottom: 20px; letter-spacing: 0; text-transform: none; }
 .export-bar { display: flex; align-items: center; justify-content: space-between; gap: 20px; padding: 17px 25px; border-top: 1px solid var(--line); background: var(--white); }
-.export-summary { min-width: 0; }
 .summary { color: var(--muted); font-size: 12px; } .summary strong { color: var(--black); font-weight: 600; }
-.estimate { margin-top: 5px; color: var(--magenta); font-size: 15px; font-weight: 700; }
+.estimate { margin-left: auto; color: var(--magenta); font-size: 15px; font-weight: 700; white-space: nowrap; }
 @media (max-width: 560px) { .export-bar { align-items: stretch; flex-direction: column; } .secondary { width: 100%; } }
 @media (max-width: 760px) { body { overflow: auto; } .topbar { display: block; } .topbar p { margin-top: 14px; text-align: left; } .brand-divider { display: none; } .app { display: block; height: auto; min-height: 0; } .sidebar { overflow: visible; border-right: 0; border-bottom: 1px solid var(--line); } .workspace { min-height: 500px; } .preview { min-height: 400px; } }
 @media (min-width: 761px) { body { overflow: hidden; } }
