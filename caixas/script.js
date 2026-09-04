@@ -1,7 +1,7 @@
 import * as THREE from 'https://cdn.jsdelivr.net/npm/three@0.152.2/build/three.module.js';
 import { OrbitControls } from 'https://cdn.jsdelivr.net/npm/three@0.152.2/examples/jsm/controls/OrbitControls.js';
 
-const makerjs = globalThis.MakerJs || globalThis.makerjs;
+let makerjs = globalThis.MakerJs || globalThis.makerjs;
 let scene;
 let camera;
 let renderer;
@@ -99,6 +99,24 @@ function getFingerLength() {
   return Math.min(getFingerLimit(), Math.max(1, +$('finger-length').value || 1));
 }
 
+function getKerf() {
+  return Math.max(0, Math.min(.5, +$('kerf').value || 0));
+}
+
+function loadMakerJs() {
+  if (makerjs) return Promise.resolve(makerjs);
+  return new Promise((resolve, reject) => {
+    const script = document.createElement('script');
+    script.src = 'https://cdn.jsdelivr.net/npm/makerjs@0.15.0/dist/browser.maker.js';
+    script.onload = () => {
+      makerjs = globalThis.MakerJs || globalThis.makerjs;
+      makerjs ? resolve(makerjs) : reject(new Error('Maker.js não expôs uma API global.'));
+    };
+    script.onerror = () => reject(new Error('Não foi possível carregar Maker.js.'));
+    document.head.appendChild(script);
+  });
+}
+
 function generateBox() {
   syncFingerLimit();
   const width = +$('width').value;
@@ -116,6 +134,7 @@ function generateBox() {
     d: internal ? depth + 2 * thickness : depth
   };
   current = { ...outer, t: thickness, preset };
+  current.kerf = getKerf();
   clearScene();
   const color = colors[selectedColor];
   const material = new THREE.MeshPhysicalMaterial({
@@ -129,7 +148,10 @@ function generateBox() {
     ior: color.ior || 1.5,
     transparent: color.opacity < 1,
     opacity: color.opacity,
-    side: THREE.DoubleSide
+    side: THREE.DoubleSide,
+    polygonOffset: true,
+    polygonOffsetFactor: 1,
+    polygonOffsetUnits: 1
   });
   panel(outer.w, thickness, outer.d, material, [0, thickness / 2, 0]);
   panel(outer.w, outer.h, thickness, material, [0, outer.h / 2, outer.d / 2 - thickness / 2]);
@@ -167,20 +189,20 @@ function generateBox() {
   controls.update();
   const jointLabel = jointType === 'finger' ? `dedos de ${getFingerLength()} mm` : 'juntas planas';
   const dividerLabel = hasDividers ? ` · ${getDividerRows()} linhas x ${getDividerColumns()} colunas` : '';
-  $('summary').innerHTML = `<strong>${Math.round(outer.w)} x ${Math.round(outer.d)} x ${Math.round(outer.h)} mm</strong> · ${pieceCount()} peças · ${jointLabel}${dividerLabel}`;
+  $('summary').innerHTML = `<strong>${Math.round(outer.w)} x ${Math.round(outer.d)} x ${Math.round(outer.h)} mm</strong> · ${pieceCount()} peças · ${jointLabel} · kerf ${current.kerf.toFixed(2)} mm${dividerLabel}`;
   $('status').textContent = 'modelo atualizado';
   $('message').textContent = 'Dimensões externas calculadas com a espessura selecionada.';
 }
 
 function addRect(model, name, x, y, width, height, thickness, edge) {
   const rect = jointType === 'finger'
-    ? new makerjs.models.ConnectTheDots(true, fingerPoints(width, height, thickness, getFingerLength()))
+    ? new makerjs.models.ConnectTheDots(true, fingerPoints(width, height, thickness, getFingerLength(), getKerf()))
     : new makerjs.models.Rectangle(width, height);
   makerjs.model.move(rect, [x, y]);
   model.models[name] = rect;
 }
 
-function fingerPoints(width, height, thickness, fingerLength) {
+function fingerPoints(width, height, thickness, fingerLength, kerf) {
   const horizontalCount = Math.max(2, Math.round(width / fingerLength));
   const verticalCount = Math.max(2, Math.round(height / fingerLength));
   const points = [];
@@ -193,7 +215,7 @@ function fingerPoints(width, height, thickness, fingerLength) {
       const bx = start[0] + stepX * (index + 1);
       const by = start[1] + stepY * (index + 1);
       const finger = index % 2 === 0;
-      const normal = [outward[0] * thickness, outward[1] * thickness];
+      const normal = [outward[0] * (thickness + kerf / 2), outward[1] * (thickness + kerf / 2)];
       points.push([ax, ay]);
       if (finger) {
         points.push([ax + normal[0], ay + normal[1]]);
@@ -211,12 +233,15 @@ function fingerPoints(width, height, thickness, fingerLength) {
 
 const layoutGap = 1.2;
 
-function exportSVG() {
+async function exportSVG() {
   if (!current) generateBox();
-  if (!current || !makerjs) {
+  try {
+    await loadMakerJs();
+  } catch (error) {
     $('message').textContent = 'Maker.js não foi carregado. Verifique a conexão e tente novamente.';
     return;
   }
+  if (!current || !makerjs) return;
   const { w, h, d, t } = current;
   const model = { models: {}, paths: {} };
   const gap = 2 * t + layoutGap;
