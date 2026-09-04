@@ -1,5 +1,6 @@
 import * as THREE from 'https://cdn.jsdelivr.net/npm/three@0.152.2/build/three.module.js';
 import { OrbitControls } from 'https://cdn.jsdelivr.net/npm/three@0.152.2/examples/jsm/controls/OrbitControls.js';
+import { businessConfig } from './config.js';
 
 let makerjs = globalThis.MakerJs || globalThis.makerjs || globalThis.makerJS;
 let scene;
@@ -14,10 +15,22 @@ let hasDividers = false;
 
 const $ = (id) => document.getElementById(id);
 const colors = {
-  black: { hex: 0x08090a, roughness: .12, clearcoat: 1, clearcoatRoughness: .06, opacity: .98 },
-  white: { hex: 0xf7f7f4, roughness: .15, clearcoat: 1, clearcoatRoughness: .08, opacity: .98 },
-  clear: { hex: 0xa9d7d1, roughness: .06, transmission: .72, thickness: .8, ior: 1.46, opacity: .62 }
+  black: { hex: 0x181a1b, roughness: .14, clearcoat: 1, clearcoatRoughness: .07, opacity: .98 },
+  white: { hex: 0xd9dad6, roughness: .17, clearcoat: 1, clearcoatRoughness: .09, opacity: .98 },
+  clear: { hex: 0xd8dedb, roughness: .08, transmission: .82, thickness: .8, ior: 1.46, opacity: .58 }
 };
+const kerf = businessConfig.kerf;
+
+function populateThicknessOptions() {
+  const select = $('thickness');
+  businessConfig.acrylic.forEach(({ thickness }) => {
+    const option = document.createElement('option');
+    option.value = thickness;
+    option.textContent = `${thickness} mm`;
+    option.selected = thickness === 3;
+    select.appendChild(option);
+  });
+}
 
 function init3D() {
   const host = $('preview');
@@ -92,6 +105,7 @@ function syncFingerLimit() {
   input.max = limit;
   input.value = Math.min(limit, Math.max(1, +input.value || 1));
   $('finger-limit').textContent = `Máximo para estas dimensões: ${limit} mm.`;
+  $('finger-value').textContent = `${input.value} mm`;
 }
 
 function getFingerLength() {
@@ -100,7 +114,7 @@ function getFingerLength() {
 }
 
 function getKerf() {
-  return Math.max(0, Math.min(.5, +$('kerf').value || 0));
+  return kerf;
 }
 
 function loadMakerJs() {
@@ -177,7 +191,7 @@ function generateBox() {
   controls.update();
   const jointLabel = jointType === 'finger' ? `dedos de ${getFingerLength()} mm` : 'juntas planas';
   const dividerLabel = hasDividers ? ` · ${getDividerRows()} linhas x ${getDividerColumns()} colunas` : '';
-  $('summary').innerHTML = `<strong>${Math.round(outer.w)} x ${Math.round(outer.d)} x ${Math.round(outer.h)} mm</strong> · ${pieceCount()} peças · ${jointLabel} · kerf ${current.kerf.toFixed(2)} mm${dividerLabel}`;
+  $('summary').innerHTML = `<strong>${Math.round(outer.w)} x ${Math.round(outer.d)} x ${Math.round(outer.h)} mm</strong> · ${pieceCount()} peças · ${jointLabel}${dividerLabel}`;
   $('status').textContent = 'modelo atualizado';
   $('message').textContent = 'Dimensões externas calculadas com a espessura selecionada.';
 }
@@ -337,6 +351,7 @@ document.querySelectorAll('input:not([name="joint"]), select').forEach((input) =
   generateBox();
 }));
 
+populateThicknessOptions();
 try {
   init3D();
   generateBox();

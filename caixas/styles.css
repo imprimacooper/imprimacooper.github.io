@@ -22,7 +22,7 @@ button { cursor: pointer; }
 .brand-divider { width: 1px; height: 35px; background: rgba(255,255,255,.3); }
 .brand h1 { margin: 0; font-size: clamp(18px, 2.6vw, 27px); font-weight: 700; letter-spacing: -.02em; }
 .topbar p { margin: 0; max-width: 310px; color: #dde1e4; font-size: 13px; line-height: 1.45; text-align: right; }
-.app { display: grid; grid-template-columns: minmax(290px, 370px) 1fr; height: calc(100dvh - 98px); min-height: 0; }
+.app { display: grid; grid-template-columns: minmax(290px, 370px) 1fr; height: calc(100dvh - 80px); min-height: 0; }
 .sidebar { overflow-y: auto; min-height: 0; padding: 28px clamp(20px, 4vw, 46px); background: var(--white); border-right: 1px solid var(--line); }
 .sidebar-section { margin-bottom: 25px; }
 .sidebar-section h2 { margin: 0 0 13px; font-size: 16px; }
@@ -49,6 +49,9 @@ input:focus { outline: 3px solid rgba(7,162,209,.16); border-color: var(--cyan);
 .choice small { display: block; margin: 4px 0 0 24px; color: var(--muted); font-size: 10px; }
 .finger-options { margin-top: 12px; }
 .finger-options[hidden] { display: none; }
+.range-value { display: grid; grid-template-columns: 1fr auto; align-items: center; gap: 12px; margin-top: 7px; }
+.range-value input[type="range"] { width: 100%; accent-color: var(--cyan); }
+.range-value output { min-width: 45px; color: var(--black); font-size: 12px; font-weight: 700; text-align: right; }
 .conditional-options[hidden] { display: none; }
 .toggle-row { display: flex; align-items: center; gap: 10px; color: var(--black); cursor: pointer; font-size: 13px; }
 .toggle-row input { position: absolute; opacity: 0; pointer-events: none; }
@@ -60,7 +63,7 @@ input:focus { outline: 3px solid rgba(7,162,209,.16); border-color: var(--cyan);
 .swatch { flex: 1; padding: 8px 4px; font-size: 11px; }
 .swatch.selected { outline: 2px solid var(--cyan); outline-offset: 1px; }
 .swatch i { display: block; width: 25px; height: 25px; margin: 0 auto 5px; border: 1px solid #adb5ba; border-radius: 50%; }
-.swatch.black i { background: linear-gradient(145deg, #626262, #090a0b 32%, #1e2021 70%, #050506); box-shadow: inset 5px 4px 8px rgba(255,255,255,.2); } .swatch.white i { background: linear-gradient(145deg, #ffffff, #eeeeeb 55%, #bfc4c4); box-shadow: inset 4px 3px 7px rgba(255,255,255,.9); } .swatch.clear i { background: linear-gradient(135deg, rgba(220,250,247,.92), rgba(255,255,255,.38) 48%, rgba(93,174,165,.72)); box-shadow: inset 4px 3px 7px rgba(255,255,255,.8); }
+.swatch.black i { background: linear-gradient(145deg, #66686a, #181a1b 32%, #36393a 70%, #121314); box-shadow: inset 5px 4px 8px rgba(255,255,255,.2); } .swatch.white i { background: linear-gradient(145deg, #f1f2ef, #d9dad6 55%, #b8bcba); box-shadow: inset 4px 3px 7px rgba(255,255,255,.9); } .swatch.clear i { background: linear-gradient(135deg, rgba(232,235,233,.9), rgba(255,255,255,.42) 48%, rgba(177,187,184,.68)); box-shadow: inset 4px 3px 7px rgba(255,255,255,.8); }
 .primary, .secondary { border-radius: 8px; font-size: 12px; font-weight: 700; letter-spacing: .05em; text-transform: uppercase; transition: .2s ease; }
 .primary { width: 100%; padding: 13px; border: 0; background: var(--cyan); color: var(--white); }
 .primary:hover { background: var(--magenta); transform: translateY(-2px); box-shadow: var(--shadow); }
