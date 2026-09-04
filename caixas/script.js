@@ -27,7 +27,7 @@ function populateThicknessOptions() {
     const option = document.createElement('option');
     option.value = thickness;
     option.textContent = `${thickness} mm`;
-    option.selected = thickness === 3;
+    option.selected = thickness === 2;
     select.appendChild(option);
   });
 }
