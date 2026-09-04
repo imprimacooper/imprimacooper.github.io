@@ -1,0 +1,104 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8">
+  <title>Gerador de Caixa Laser</title>
+  <style>
+    body { font-family: sans-serif; margin: 20px; }
+    #preview { width: 600px; height: 400px; border: 1px solid #ccc; }
+  </style>
+</head>
+<body>
+  <h1>Gerador de Caixa Laser</h1>
+
+  <label>Largura (mm): <input id="width" type="number" value="100"></label><br>
+  <label>Altura (mm): <input id="height" type="number" value="80"></label><br>
+  <label>Profundidade (mm): <input id="depth" type="number" value="60"></label><br>
+  <label>Espessura (mm): <input id="thickness" type="number" value="3"></label><br>
+  <button id="generate">Gerar Caixa</button>
+  <button id="export">Exportar SVG</button>
+
+  <div id="preview"></div>
+
+  <!-- Three.js -->
+  <script src="https://cdn.jsdelivr.net/npm/three@0.152.2/build/three.min.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/three@0.152.2/examples/js/controls/OrbitControls.js"></script>
+  <!-- Maker.js -->
+  <script src="https://cdn.jsdelivr.net/npm/makerjs@0.15.0/dist/browser.maker.js"></script>
+
+  <script>
+    let scene, camera, renderer, controls;
+
+    function init3D() {
+      scene = new THREE.Scene();
+      camera = new THREE.PerspectiveCamera(45, 600/400, 1, 1000);
+      camera.position.set(150, 150, 150);
+
+      renderer = new THREE.WebGLRenderer();
+      renderer.setSize(600, 400);
+      document.getElementById('preview').appendChild(renderer.domElement);
+
+      controls = new THREE.OrbitControls(camera, renderer.domElement);
+      controls.update();
+
+      const light = new THREE.DirectionalLight(0xffffff, 1);
+      light.position.set(100, 100, 100).normalize();
+      scene.add(light);
+
+      animate();
+    }
+
+    function animate() {
+      requestAnimationFrame(animate);
+      renderer.render(scene, camera);
+    }
+
+    function generateBox() {
+      const w = parseFloat(document.getElementById('width').value);
+      const h = parseFloat(document.getElementById('height').value);
+      const d = parseFloat(document.getElementById('depth').value);
+      const t = parseFloat(document.getElementById('thickness').value);
+
+      // Limpar cena
+      while(scene.children.length > 0){ scene.remove(scene.children[0]); }
+
+      const material = new THREE.MeshLambertMaterial({ color: 0xaaaaaa, transparent: true, opacity: 0.8 });
+
+      const geometry = new THREE.BoxGeometry(w, h, d);
+      const mesh = new THREE.Mesh(geometry, material);
+      scene.add(mesh);
+
+      // Guardar dados para exportação
+      window.boxParams = { w, h, d, t };
+    }
+
+    function exportSVG() {
+      const { w, h, d, t } = window.boxParams;
+      const makerjs = window.makerjs;
+
+      // Exemplo simples: apenas retângulos das faces
+      const model = {
+        models: {
+          frente: new makerjs.models.Rectangle(w, h),
+          lateral: new makerjs.models.Rectangle(d, h),
+          topo: new makerjs.models.Rectangle(w, d)
+        }
+      };
+
+      const svg = makerjs.exporter.toSVG(model);
+      const blob = new Blob([svg], {type: "image/svg+xml"});
+      const url = URL.createObjectURL(blob);
+
+      const a = document.createElement("a");
+      a.href = url;
+      a.download = "caixa.svg";
+      a.click();
+    }
+
+    document.getElementById('generate').addEventListener('click', generateBox);
+    document.getElementById('export').addEventListener('click', exportSVG);
+
+    init3D();
+  </script>
+</body>
+</html>
