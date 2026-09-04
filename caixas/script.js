@@ -1,7 +1,7 @@
 import * as THREE from 'https://cdn.jsdelivr.net/npm/three@0.152.2/build/three.module.js';
 import { OrbitControls } from 'https://cdn.jsdelivr.net/npm/three@0.152.2/examples/jsm/controls/OrbitControls.js';
 
-let makerjs = globalThis.MakerJs || globalThis.makerjs;
+let makerjs = globalThis.MakerJs || globalThis.makerjs || globalThis.makerJS;
 let scene;
 let camera;
 let renderer;
@@ -109,7 +109,7 @@ function loadMakerJs() {
     const script = document.createElement('script');
     script.src = 'https://cdn.jsdelivr.net/npm/makerjs@0.15.0/dist/browser.maker.js';
     script.onload = () => {
-      makerjs = globalThis.MakerJs || globalThis.makerjs;
+      makerjs = globalThis.MakerJs || globalThis.makerjs || globalThis.makerJS;
       makerjs ? resolve(makerjs) : reject(new Error('Maker.js não expôs uma API global.'));
     };
     script.onerror = () => reject(new Error('Não foi possível carregar Maker.js.'));
@@ -177,11 +177,11 @@ function generateBox() {
     const columns = getDividerColumns();
     for (let index = 1; index < rows; index += 1) {
       const z = -outer.d / 2 + thickness + (outer.d - 2 * thickness) * index / rows;
-      panel(outer.w - 2 * thickness, outer.h * .7, thickness / 2, material, [0, outer.h * .36, z]);
+      panel(outer.w - 2 * thickness, outer.h - 2 * thickness, thickness / 2, material, [0, outer.h / 2, z]);
     }
     for (let index = 1; index < columns; index += 1) {
       const x = -outer.w / 2 + thickness + (outer.w - 2 * thickness) * index / columns;
-      panel(thickness / 2, outer.h * .7, outer.d - 2 * thickness, material, [x, outer.h * .36, 0], [0, Math.PI / 2, 0]);
+      panel(thickness / 2, outer.h - 2 * thickness, outer.d - 2 * thickness, material, [x, outer.h / 2, 0], [0, Math.PI / 2, 0]);
     }
   }
   camera.position.set(Math.max(150, outer.w * 1.8), Math.max(130, outer.h * 1.7), Math.max(180, outer.d * 2));
@@ -203,8 +203,8 @@ function addRect(model, name, x, y, width, height, thickness, edge) {
 }
 
 function fingerPoints(width, height, thickness, fingerLength, kerf) {
-  const horizontalCount = Math.max(2, Math.round(width / fingerLength));
-  const verticalCount = Math.max(2, Math.round(height / fingerLength));
+  const horizontalCount = Math.max(2, Math.floor(width / fingerLength));
+  const verticalCount = Math.max(2, Math.floor(height / fingerLength));
   const points = [];
   const addEdge = (start, end, count, outward) => {
     const stepX = (end[0] - start[0]) / count;
@@ -215,13 +215,13 @@ function fingerPoints(width, height, thickness, fingerLength, kerf) {
       const bx = start[0] + stepX * (index + 1);
       const by = start[1] + stepY * (index + 1);
       const finger = index % 2 === 0;
-      const normal = [outward[0] * (thickness + kerf / 2), outward[1] * (thickness + kerf / 2)];
+      const normal = [outward[0] * (thickness - kerf / 2), outward[1] * (thickness - kerf / 2)];
       points.push([ax, ay]);
       if (finger) {
         points.push([ax + normal[0], ay + normal[1]]);
         points.push([bx + normal[0], by + normal[1]]);
-        points.push([bx, by]);
       }
+      points.push([bx, by]);
     }
   };
   addEdge([0, 0], [width, 0], horizontalCount, [0, -1]);
@@ -229,6 +229,54 @@ function fingerPoints(width, height, thickness, fingerLength, kerf) {
   addEdge([width, height], [0, height], horizontalCount, [0, 1]);
   addEdge([0, height], [0, 0], verticalCount, [-1, 0]);
   return points;
+}
+
+function dividerPoints(width, height, thickness, fingerLength, kerf, slots, slotsFromTop) {
+  const points = [];
+  const notchDepth = Math.max(thickness, thickness * 2 - kerf);
+  const notchWidth = Math.min(thickness + kerf, fingerLength * .45);
+  const addNotchedEdge = (fromTop) => {
+    const orderedSlots = slots.slice().sort((a, b) => a - b);
+    if (fromTop) {
+      points.push([0, height]);
+      let cursor = 0;
+      orderedSlots.forEach((slot) => {
+        points.push([slot - notchWidth / 2, height]);
+        points.push([slot - notchWidth / 2, height - notchDepth]);
+        points.push([slot + notchWidth / 2, height - notchDepth]);
+        points.push([slot + notchWidth / 2, height]);
+        cursor = slot + notchWidth / 2;
+      });
+      points.push([width, height]);
+    } else {
+      points.push([width, 0]);
+      orderedSlots.slice().reverse().forEach((slot) => {
+        points.push([slot + notchWidth / 2, 0]);
+        points.push([slot + notchWidth / 2, notchDepth]);
+        points.push([slot - notchWidth / 2, notchDepth]);
+        points.push([slot - notchWidth / 2, 0]);
+      });
+      points.push([0, 0]);
+    }
+  };
+  if (slotsFromTop) {
+    points.push([0, 0], [width, 0], [width, height]);
+    addNotchedEdge(true);
+    points.push([0, height], [0, 0]);
+  } else {
+    points.push([0, 0], [0, height], [width, height]);
+    addNotchedEdge(false);
+    points.push([0, 0]);
+  }
+  return points;
+}
+
+function addDividerPiece(model, name, x, y, width, height, thickness, slots, slotsFromTop) {
+  const piece = jointType === 'finger'
+    ? new makerjs.models.ConnectTheDots(true, dividerPoints(width, height, thickness, getFingerLength(), getKerf(), slots, slotsFromTop))
+    : new makerjs.models.Rectangle(width, height);
+  makerjs.model.move(piece, [x, y]);
+  model.models[name] = piece;
 }
 
 const layoutGap = 1.2;
@@ -259,8 +307,10 @@ async function exportSVG() {
   if (hasDividers) {
     const rows = getDividerRows();
     const columns = getDividerColumns();
-    for (let index = 1; index < rows; index += 1) addRect(model, `divider-row-${index}`, w * 2 + d + gap * 4, d + gap * (3 + index), w - 2 * t, d - 2 * t, t, w);
-    for (let index = 1; index < columns; index += 1) addRect(model, `divider-column-${index}`, w * 3 + d * 2 + gap * (5 + index), d + gap, d - 2 * t, h, t, h);
+    const rowSlots = Array.from({ length: Math.max(0, columns - 1) }, (_, index) => (w - 2 * t) * (index + 1) / columns);
+    const columnSlots = Array.from({ length: Math.max(0, rows - 1) }, (_, index) => (d - 2 * t) * (index + 1) / rows);
+    for (let index = 1; index < rows; index += 1) addDividerPiece(model, `divider-row-${index}`, w * 2 + d + gap * 4, d + gap * (3 + index), w - 2 * t, h - 2 * t, t, rowSlots, true);
+    for (let index = 1; index < columns; index += 1) addDividerPiece(model, `divider-column-${index}`, w * 3 + d * 2 + gap * (5 + index), d + gap, d - 2 * t, h - 2 * t, t, columnSlots, false);
   }
   const svg = makerjs.exporter.toSVG(model, { stroke: 'none', fill: 'none' }).replace(/<svg /, '<svg id="caixa-laser" ');
   const url = URL.createObjectURL(new Blob([svg], { type: 'image/svg+xml' }));
