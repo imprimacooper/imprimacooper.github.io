@@ -81,7 +81,26 @@ function getDividerColumns() {
   return Math.max(1, Math.min(12, Math.round(+$('divider-columns').value) || 1));
 }
 
+function getFingerLimit() {
+  const dimensions = [+$('width').value, +$('height').value, +$('depth').value].filter((value) => Number.isFinite(value) && value > 0);
+  return dimensions.length ? Math.max(1, Math.floor(Math.min(...dimensions) / 2 * 10) / 10) : 1;
+}
+
+function syncFingerLimit() {
+  const limit = getFingerLimit();
+  const input = $('finger-length');
+  input.max = limit;
+  input.value = Math.min(limit, Math.max(1, +input.value || 1));
+  $('finger-limit').textContent = `Máximo para estas dimensões: ${limit} mm.`;
+}
+
+function getFingerLength() {
+  syncFingerLimit();
+  return Math.min(getFingerLimit(), Math.max(1, +$('finger-length').value || 1));
+}
+
 function generateBox() {
+  syncFingerLimit();
   const width = +$('width').value;
   const height = +$('height').value;
   const depth = +$('depth').value;
@@ -146,7 +165,7 @@ function generateBox() {
   camera.position.set(Math.max(150, outer.w * 1.8), Math.max(130, outer.h * 1.7), Math.max(180, outer.d * 2));
   controls.target.set(0, outer.h / 2, 0);
   controls.update();
-  const jointLabel = jointType === 'finger' ? 'juntas com dedos' : 'juntas planas';
+  const jointLabel = jointType === 'finger' ? `dedos de ${getFingerLength()} mm` : 'juntas planas';
   const dividerLabel = hasDividers ? ` · ${getDividerRows()} linhas x ${getDividerColumns()} colunas` : '';
   $('summary').innerHTML = `<strong>${Math.round(outer.w)} x ${Math.round(outer.d)} x ${Math.round(outer.h)} mm</strong> · ${pieceCount()} peças · ${jointLabel}${dividerLabel}`;
   $('status').textContent = 'modelo atualizado';
@@ -154,20 +173,43 @@ function generateBox() {
 }
 
 function addRect(model, name, x, y, width, height, thickness, edge) {
-  const rect = new makerjs.models.Rectangle(width, height);
+  const rect = jointType === 'finger'
+    ? new makerjs.models.ConnectTheDots(true, fingerPoints(width, height, thickness, getFingerLength()))
+    : new makerjs.models.Rectangle(width, height);
   makerjs.model.move(rect, [x, y]);
   model.models[name] = rect;
-  if (jointType === 'finger') addFingerJoints(model, x, y, width, height, thickness, edge);
 }
 
-function addFingerJoints(model, x, y, width, height, thickness, edge) {
-  const count = Math.max(2, Math.floor((edge || width) / (thickness * 5)));
-  const step = (edge || width) / count;
-  for (let index = 1; index < count; index += 2) {
-    const joint = makerjs.model.move(new makerjs.models.Rectangle(Math.min(thickness, step * .35), thickness), [x + index * step - thickness / 2, y + height - thickness]);
-    model.models[`joint_${x}_${index}`] = joint;
-  }
+function fingerPoints(width, height, thickness, fingerLength) {
+  const horizontalCount = Math.max(2, Math.round(width / fingerLength));
+  const verticalCount = Math.max(2, Math.round(height / fingerLength));
+  const points = [];
+  const addEdge = (start, end, count, outward) => {
+    const stepX = (end[0] - start[0]) / count;
+    const stepY = (end[1] - start[1]) / count;
+    for (let index = 0; index < count; index += 1) {
+      const ax = start[0] + stepX * index;
+      const ay = start[1] + stepY * index;
+      const bx = start[0] + stepX * (index + 1);
+      const by = start[1] + stepY * (index + 1);
+      const finger = index % 2 === 0;
+      const normal = [outward[0] * thickness, outward[1] * thickness];
+      points.push([ax, ay]);
+      if (finger) {
+        points.push([ax + normal[0], ay + normal[1]]);
+        points.push([bx + normal[0], by + normal[1]]);
+        points.push([bx, by]);
+      }
+    }
+  };
+  addEdge([0, 0], [width, 0], horizontalCount, [0, -1]);
+  addEdge([width, 0], [width, height], verticalCount, [1, 0]);
+  addEdge([width, height], [0, height], horizontalCount, [0, 1]);
+  addEdge([0, height], [0, 0], verticalCount, [-1, 0]);
+  return points;
 }
+
+const layoutGap = 1.2;
 
 function exportSVG() {
   if (!current) generateBox();
@@ -176,23 +218,24 @@ function exportSVG() {
     return;
   }
   const { w, h, d, t } = current;
-  const model = { models: {} };
+  const model = { models: {}, paths: {} };
+  const gap = 2 * t + layoutGap;
   addRect(model, 'base', 0, 0, w, d, t, w);
-  addRect(model, 'front', 0, d + t * 3, w, h, t, w);
-  addRect(model, 'back', w + t * 3, d + t * 3, w, h, t, w);
-  addRect(model, 'left', w * 2 + t * 6, d + t * 3, d, h, t, h);
-  addRect(model, 'right', w * 2 + d + t * 9, d + t * 3, d, h, t, h);
-  if (preset !== 'open') addRect(model, 'lid', 0, d + h + t * 6, w, d, t, w);
+  addRect(model, 'front', 0, d + gap, w, h, t, w);
+  addRect(model, 'back', w + gap, d + gap, w, h, t, w);
+  addRect(model, 'left', w * 2 + gap * 2, d + gap, d, h, t, h);
+  addRect(model, 'right', w * 2 + d + gap * 3, d + gap, d, h, t, h);
+  if (preset !== 'open') addRect(model, 'lid', 0, d + h + gap * 2, w, d, t, w);
   if (preset === 'hinge') {
-    addRect(model, 'hinge-barrel-left', 0, d + h + t * 9, w / 3, t * 3, t, w / 3);
-    addRect(model, 'hinge-barrel-right', w / 3 + t * 2, d + h + t * 9, w / 3, t * 3, t, w / 3);
-    addRect(model, 'hinge-pin', 2 * w / 3 + t * 4, d + h + t * 9, w / 3, t, t, w / 3);
+    addHingePiece(model, 'hinge-barrel-left', 0, d + h + gap * 3, w / 3, t * 3, t);
+    addHingePiece(model, 'hinge-barrel-right', w / 3 + gap, d + h + gap * 3, w / 3, t * 3, t);
+    addHingePiece(model, 'hinge-pin', 2 * w / 3 + gap * 2, d + h + gap * 3, w / 3, t, t);
   }
   if (hasDividers) {
     const rows = getDividerRows();
     const columns = getDividerColumns();
-    for (let index = 1; index < rows; index += 1) addRect(model, `divider-row-${index}`, w * 2 + d + t * 12, d + t * (3 + index * 2), w - 2 * t, d - 2 * t, t, w);
-    for (let index = 1; index < columns; index += 1) addRect(model, `divider-column-${index}`, w * 3 + d * 2 + t * (15 + index * 2), d + t * 3, d - 2 * t, h, t, h);
+    for (let index = 1; index < rows; index += 1) addRect(model, `divider-row-${index}`, w * 2 + d + gap * 4, d + gap * (3 + index), w - 2 * t, d - 2 * t, t, w);
+    for (let index = 1; index < columns; index += 1) addRect(model, `divider-column-${index}`, w * 3 + d * 2 + gap * (5 + index), d + gap, d - 2 * t, h, t, h);
   }
   const svg = makerjs.exporter.toSVG(model, { stroke: 'none', fill: 'none' }).replace(/<svg /, '<svg id="caixa-laser" ');
   const url = URL.createObjectURL(new Blob([svg], { type: 'image/svg+xml' }));
@@ -202,6 +245,14 @@ function exportSVG() {
   link.click();
   URL.revokeObjectURL(url);
   $('message').textContent = 'SVG planificado exportado com encaixes.';
+}
+
+function addHingePiece(model, name, x, y, width, height, radius) {
+  const piece = new makerjs.models.Rectangle(width, height);
+  makerjs.model.move(piece, [x, y]);
+  model.models[name] = piece;
+  model.paths[`${name}-hole-a`] = new makerjs.paths.Circle([x + radius * 2, y + height / 2], radius);
+  model.paths[`${name}-hole-b`] = new makerjs.paths.Circle([x + width - radius * 2, y + height / 2], radius);
 }
 
 document.querySelectorAll('.preset').forEach((button) => button.addEventListener('click', () => {
@@ -224,11 +275,13 @@ document.querySelector('#has-dividers').addEventListener('change', (event) => {
 });
 document.querySelectorAll('input[name="joint"]').forEach((input) => input.addEventListener('change', () => {
   jointType = document.querySelector('input[name="joint"]:checked').value;
+  $('finger-options').hidden = jointType !== 'finger';
   generateBox();
 }));
+$('finger-options').hidden = false;
 $('generate').addEventListener('click', generateBox);
 $('export').addEventListener('click', exportSVG);
-document.querySelectorAll('input, select').forEach((input) => input.addEventListener('change', () => {
+document.querySelectorAll('input:not([name="joint"]), select').forEach((input) => input.addEventListener('change', () => {
   $('divider-options').hidden = !hasDividers;
   generateBox();
 }));

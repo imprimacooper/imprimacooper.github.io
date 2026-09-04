@@ -47,6 +47,8 @@ input:focus { outline: 3px solid rgba(7,162,209,.16); border-color: var(--cyan);
 .choice:has(input:checked), .choice:hover { border-color: var(--cyan); background: #eefaff; }
 .choice input { margin-right: 7px; accent-color: var(--cyan); }
 .choice small { display: block; margin: 4px 0 0 24px; color: var(--muted); font-size: 10px; }
+.finger-options { margin-top: 12px; }
+.finger-options[hidden] { display: none; }
 .conditional-options[hidden] { display: none; }
 .toggle-row { display: flex; align-items: center; gap: 10px; color: var(--black); cursor: pointer; font-size: 13px; }
 .toggle-row input { position: absolute; opacity: 0; pointer-events: none; }
