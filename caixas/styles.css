@@ -35,24 +35,37 @@ button { cursor: pointer; }
 .field-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }
 label { display: block; color: var(--muted); font-size: 12px; }
 .unit { position: relative; }
-.unit input { width: 100%; margin-top: 6px; padding: 10px 35px 10px 11px; border: 1px solid #d9dfe2; border-radius: 4px; color: var(--black); background: var(--white); }
+.unit input, select { width: 100%; margin-top: 6px; padding: 10px 11px; border: 1px solid #d9dfe2; border-radius: 4px; color: var(--black); background: var(--white); }
+.sidebar select { appearance: auto; }
 .unit span { position: absolute; right: 10px; bottom: 11px; color: var(--muted); font-size: 10px; }
 input:focus { outline: 3px solid rgba(7,162,209,.16); border-color: var(--cyan); }
 .note { color: var(--muted); font-size: 11px; line-height: 1.5; }
 .dimension-option { display: flex; align-items: center; gap: 8px; margin-top: 8px; color: var(--black); font-size: 13px; }
 .dimension-option input { accent-color: var(--cyan); }
+.choice-grid { display: grid; gap: 7px; }
+.choice { display: block; padding: 10px 12px; border: 1px solid #d9dfe2; border-radius: 8px; background: var(--white); color: var(--black); cursor: pointer; font-size: 13px; }
+.choice:has(input:checked), .choice:hover { border-color: var(--cyan); background: #eefaff; }
+.choice input { margin-right: 7px; accent-color: var(--cyan); }
+.choice small { display: block; margin: 4px 0 0 24px; color: var(--muted); font-size: 10px; }
+.conditional-options[hidden] { display: none; }
+.toggle-row { display: flex; align-items: center; gap: 10px; color: var(--black); cursor: pointer; font-size: 13px; }
+.toggle-row input { position: absolute; opacity: 0; pointer-events: none; }
+.toggle { position: relative; width: 38px; height: 22px; flex: 0 0 auto; border-radius: 999px; background: #d9dfe2; transition: .2s ease; }
+.toggle::after { content: ""; position: absolute; top: 3px; left: 3px; width: 16px; height: 16px; border-radius: 50%; background: var(--white); box-shadow: 0 1px 3px rgba(39,39,35,.25); transition: .2s ease; }
+.toggle-row input:checked + .toggle { background: var(--cyan); }
+.toggle-row input:checked + .toggle::after { left: 19px; }
 .swatches { display: flex; gap: 8px; margin-top: 7px; }
 .swatch { flex: 1; padding: 8px 4px; font-size: 11px; }
 .swatch.selected { outline: 2px solid var(--cyan); outline-offset: 1px; }
 .swatch i { display: block; width: 25px; height: 25px; margin: 0 auto 5px; border: 1px solid #adb5ba; border-radius: 50%; }
-.swatch.black i { background: var(--black); } .swatch.white i { background: var(--white); } .swatch.clear i { background: linear-gradient(135deg, #cdeee9, #fff 48%, #81c4b9); }
+.swatch.black i { background: linear-gradient(145deg, #626262, #090a0b 32%, #1e2021 70%, #050506); box-shadow: inset 5px 4px 8px rgba(255,255,255,.2); } .swatch.white i { background: linear-gradient(145deg, #ffffff, #eeeeeb 55%, #bfc4c4); box-shadow: inset 4px 3px 7px rgba(255,255,255,.9); } .swatch.clear i { background: linear-gradient(135deg, rgba(220,250,247,.92), rgba(255,255,255,.38) 48%, rgba(93,174,165,.72)); box-shadow: inset 4px 3px 7px rgba(255,255,255,.8); }
 .primary, .secondary { border-radius: 8px; font-size: 12px; font-weight: 700; letter-spacing: .05em; text-transform: uppercase; transition: .2s ease; }
 .primary { width: 100%; padding: 13px; border: 0; background: var(--cyan); color: var(--white); }
 .primary:hover { background: var(--magenta); transform: translateY(-2px); box-shadow: var(--shadow); }
 .secondary { padding: 11px 15px; border: 1px solid var(--cyan); background: var(--white); color: var(--cyan-dark); }
 .secondary:hover { background: var(--cyan); color: var(--white); }
 .workspace { display: grid; grid-template-rows: minmax(390px, 1fr) auto; min-width: 0; }
-.preview { position: relative; min-height: 390px; overflow: hidden; background: radial-gradient(circle at 55% 42%, var(--white), #e8edef 72%); }
+.preview { position: relative; min-height: 390px; overflow: hidden; background: radial-gradient(circle at 54% 40%, #858d91 0, #626a6e 42%, #454b4f 100%); }
 .preview canvas { display: block; width: 100%; height: 100%; }
 .preview-label, .status { position: absolute; color: var(--muted); pointer-events: none; font-size: 10px; letter-spacing: .1em; text-transform: uppercase; }
 .preview-label { top: 22px; left: 25px; } .status { right: 25px; bottom: 20px; letter-spacing: 0; text-transform: none; }

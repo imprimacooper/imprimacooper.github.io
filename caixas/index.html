@@ -26,7 +26,6 @@
           <button class="preset active" data-preset="open">Aberta<small>base + quatro lados</small></button>
           <button class="preset" data-preset="lid">Com tampa<small>tampa encaixada</small></button>
           <button class="preset" data-preset="hinge">Com dobradiça<small>tampa articulada</small></button>
-          <button class="preset" data-preset="divider">Divisórias<small>grade interna</small></button>
         </div>
       </section>
 
@@ -37,11 +36,34 @@
           <label>Largura<div class="unit"><input id="width" type="number" min="10" value="100"><span>mm</span></div></label>
           <label>Profundidade<div class="unit"><input id="depth" type="number" min="10" value="60"><span>mm</span></div></label>
           <label>Altura<div class="unit"><input id="height" type="number" min="10" value="80"><span>mm</span></div></label>
-          <label>Espessura<div class="unit"><input id="thickness" type="number" min="1" step="0.1" value="3"><span>mm</span></div></label>
+          <label>Espessura<select id="thickness"><option value="2">2 mm</option><option value="3" selected>3 mm</option><option value="4">4 mm</option><option value="5">5 mm</option><option value="6">6 mm</option><option value="8">8 mm</option><option value="10">10 mm</option></select></label>
         </div>
         <p class="note">As dimensões informadas são:</p>
         <label class="dimension-option"><input type="radio" name="dimension" value="internal" checked> internas</label>
         <label class="dimension-option"><input type="radio" name="dimension" value="external"> externas</label>
+      </section>
+
+      <section class="sidebar-section">
+        <div class="eyebrow">Montagem</div>
+        <h2>Tipo de junta</h2>
+        <div class="choice-grid">
+          <label class="choice active"><input type="radio" name="joint" value="finger" checked> com dedos<small>encaixe macho e fêmea</small></label>
+          <label class="choice"><input type="radio" name="joint" value="flat"> plana<small>bordas retas para colagem</small></label>
+        </div>
+      </section>
+
+      <section class="sidebar-section">
+        <div class="eyebrow">Organização interna</div>
+        <label class="toggle-row"><input id="has-dividers" type="checkbox"><span class="toggle" aria-hidden="true"></span><strong>Adicionar divisórias</strong></label>
+      </section>
+
+      <section id="divider-options" class="sidebar-section conditional-options" hidden>
+        <h2>Grade de divisórias</h2>
+        <div class="field-grid">
+          <label>Linhas<div class="unit"><input id="divider-rows" type="number" min="1" max="12" value="2"><span>un.</span></div></label>
+          <label>Colunas<div class="unit"><input id="divider-columns" type="number" min="1" max="12" value="2"><span>un.</span></div></label>
+        </div>
+        <p class="note">Define os espaços internos da caixa.</p>
       </section>
 
       <section class="sidebar-section">
