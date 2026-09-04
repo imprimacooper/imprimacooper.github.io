@@ -87,6 +87,31 @@ function panel(width, height, depth, material, position, rotation) {
   scene.add(mesh);
 }
 
+function addFingerPreview(width, height, depth, thickness, material) {
+  if (jointType !== 'finger') return;
+  const fingerLength = getFingerLength();
+  const edgeMaterial = material.userData.edgeMaterial;
+  const horizontalCount = Math.max(2, Math.floor(width / fingerLength));
+  const horizontalStep = width / horizontalCount;
+  const depthCount = Math.max(2, Math.floor(depth / fingerLength));
+  const depthStep = depth / depthCount;
+  const seamDepth = .04;
+  const seamHeight = Math.max(.4, thickness * .28);
+  const seamMaterial = edgeMaterial
+    ? new THREE.MeshBasicMaterial({ color: edgeMaterial.color, transparent: true, opacity: edgeMaterial.opacity, depthWrite: false })
+    : material;
+  for (let index = 1; index < horizontalCount - 1; index += 2) {
+    const x = -width / 2 + horizontalStep * (index + .5);
+    panel(horizontalStep - getKerf(), seamHeight, seamDepth, seamMaterial, [x, seamHeight / 2, depth / 2 + seamDepth / 2]);
+    panel(horizontalStep - getKerf(), seamHeight, seamDepth, seamMaterial, [x, seamHeight / 2, -depth / 2 - seamDepth / 2]);
+  }
+  for (let index = 1; index < depthCount - 1; index += 2) {
+    const z = -depth / 2 + depthStep * (index + .5);
+    panel(seamDepth, seamHeight, depthStep - getKerf(), seamMaterial, [width / 2 + seamDepth / 2, seamHeight / 2, z]);
+    panel(seamDepth, seamHeight, depthStep - getKerf(), seamMaterial, [-width / 2 - seamDepth / 2, seamHeight / 2, z]);
+  }
+}
+
 function addLidFingerPreview(width, height, depth, thickness, material) {
   if (jointType !== 'finger') return;
   const fingerLength = getFingerLength();
@@ -228,6 +253,7 @@ function generateBox() {
   panel(outer.w, outer.h, thickness, material, [0, outer.h / 2, -outer.d / 2 + thickness / 2]);
   panel(thickness, outer.h, outer.d - 2 * thickness, material, [-outer.w / 2 + thickness / 2, outer.h / 2, 0]);
   panel(thickness, outer.h, outer.d - 2 * thickness, material, [outer.w / 2 - thickness / 2, outer.h / 2, 0]);
+  addFingerPreview(outer.w, outer.h, outer.d, thickness, material);
   if (preset === 'lid') {
     panel(outer.w, thickness, outer.d, material, [0, outer.h + thickness / 2, 0]);
     addLidFingerPreview(outer.w, outer.h, outer.d, thickness, material);
