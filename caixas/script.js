@@ -5,6 +5,7 @@ import { BlobWriter, TextReader, ZipWriter } from 'https://cdn.jsdelivr.net/npm/
 import { businessConfig } from './config.js';
 import { createBoxGeometry } from './geometry.js';
 
+// Estado da interface e do preview 3D.
 let scene;
 let camera;
 let renderer;
@@ -25,6 +26,7 @@ const colors = {
 };
 const kerf = businessConfig.kerf;
 
+// Preenche a lista de espessuras disponíveis no config.
 function populateThicknessOptions() {
   const select = $('thickness');
   businessConfig.acrylic.forEach(({ thickness }) => {
@@ -36,6 +38,7 @@ function populateThicknessOptions() {
   });
 }
 
+// Cria a cena, as luzes, o ambiente refletivo e os controles de órbita.
 function init3D() {
   const host = $('preview');
   scene = new THREE.Scene();
@@ -63,6 +66,7 @@ function init3D() {
   animate();
 }
 
+// Mantém o canvas proporcional ao espaço disponível.
 function resize() {
   const host = $('preview');
   const width = host.clientWidth;
@@ -72,16 +76,19 @@ function resize() {
   renderer.setSize(width, height, false);
 }
 
+// Renderiza continuamente a cena e atualiza a órbita da câmera.
 function animate() {
   requestAnimationFrame(animate);
   controls.update();
   renderer.render(scene, camera);
 }
 
+// Remove as peças antigas antes de desenhar o novo modelo.
 function clearScene() {
   while (scene.children.length > 2) scene.remove(scene.children[2]);
 }
 
+// Extruda literalmente o contorno 2D de uma peça da geometria compartilhada.
 function createExtrudedPart(piece, material) {
   const shape = new THREE.Shape();
   piece.points.forEach(([x, y], index) => {
@@ -104,24 +111,29 @@ function createExtrudedPart(piece, material) {
   scene.add(mesh);
 }
 
+// Retorna a quantidade de placas que será mostrada no resumo.
 function pieceCount() {
   const basePieces = preset === 'open' ? 5 : 6;
   return basePieces + (hasDividers ? Math.max(0, getDividerRows() - 1) + Math.max(0, getDividerColumns() - 1) : 0);
 }
 
+// Lê e limita a quantidade de linhas da grade interna.
 function getDividerRows() {
   return Math.max(1, Math.min(12, Math.round(+$('divider-rows').value) || 1));
 }
 
+// Lê e limita a quantidade de colunas da grade interna.
 function getDividerColumns() {
   return Math.max(1, Math.min(12, Math.round(+$('divider-columns').value) || 1));
 }
 
+// Calcula o limite do dedo usando dois terços da menor dimensão informada.
 function getFingerLimit() {
   const dimensions = [+$('width').value, +$('height').value, +$('depth').value].filter((value) => Number.isFinite(value) && value > 0);
   return dimensions.length ? Math.max(1, Math.floor(Math.min(...dimensions) * 2 / 3 * 10) / 10) : 1;
 }
 
+// Mantém o slider e o texto do limite sincronizados.
 function syncFingerLimit() {
   const limit = getFingerLimit();
   const input = $('finger-length');
@@ -131,15 +143,18 @@ function syncFingerLimit() {
   $('finger-value').textContent = `${input.value} mm`;
 }
 
+// Retorna o comprimento efetivo do dedo depois de aplicar os limites.
 function getFingerLength() {
   syncFingerLimit();
   return Math.min(getFingerLimit(), Math.max(1, +$('finger-length').value || 1));
 }
 
+// Fornece o kerf centralizado na configuração comercial.
 function getKerf() {
   return kerf;
 }
 
+// Calcula a área, aplica a margem de quebra e o preço mínimo configurados.
 function getMaterialEstimate(width, height, depth, thickness) {
   const material = businessConfig.acrylic.find((item) => item.thickness === thickness);
   if (!material) return { area: 0, value: 0 };
@@ -158,12 +173,14 @@ function getMaterialEstimate(width, height, depth, thickness) {
   return { area: squareMeters, value: Math.max(materialValue, minimumPrice) };
 }
 
+// Atualiza o valor estimado exibido abaixo do preview.
 function updateEstimate(width, height, depth, thickness) {
   const estimate = getMaterialEstimate(width, height, depth, thickness);
   const formatter = new Intl.NumberFormat('pt-BR', { style: 'currency', currency: businessConfig.currency });
   $('estimate').textContent = `Valor estimado: ${formatter.format(estimate.value)} · ${estimate.area.toFixed(3)} m²`;
 }
 
+// Gera a geometria comum e reconstrói todas as peças do preview.
 function generateBox() {
   syncFingerLimit();
   const width = +$('width').value;
@@ -241,10 +258,12 @@ function generateBox() {
 
 const layoutGap = 1.2;
 
+// Converte uma lista de pontos 2D no comando path usado pelo SVG.
 function svgPath(points, offset) {
   return points.map(([x, y], index) => `${index === 0 ? 'M' : 'L'} ${(x + offset[0]).toFixed(3)} ${(y + offset[1]).toFixed(3)}`).join(' ') + ' Z';
 }
 
+// Monta o SVG de corte a partir dos mesmos pontos usados no 3D.
 function buildSVG() {
   if (!current) generateBox();
   if (!current || !current.geometry) return null;
@@ -291,6 +310,7 @@ function buildSVG() {
   return `<svg id="caixa-laser" xmlns="http://www.w3.org/2000/svg" viewBox="${(minX - padding).toFixed(3)} ${(minY - padding).toFixed(3)} ${(maxX - minX + padding * 2).toFixed(3)} ${(maxY - minY + padding * 2).toFixed(3)}"><g fill="none" stroke="#000" stroke-width="0.1">${paths.map((path) => `<path d="${path}"/>`).join('')}</g></svg>`;
 }
 
+// Monta o texto que acompanha o corte dentro do arquivo ZIP.
 function buildSummary() {
   const formatter = new Intl.NumberFormat('pt-BR', { style: 'currency', currency: businessConfig.currency });
   const estimate = getMaterialEstimate(current.w, current.h, current.d, current.t);
@@ -312,6 +332,7 @@ function buildSummary() {
   ].join('\n');
 }
 
+// Empacota resumo e SVG em um ZIP protegido por senha.
 async function exportZIP() {
   if (!current) generateBox();
   const svg = buildSVG();
@@ -332,12 +353,14 @@ async function exportZIP() {
   $('message').textContent = 'ZIP protegido exportado com resumo e corte SVG.';
 }
 
+// Alterna entre caixa aberta e caixa com tampa.
 document.querySelectorAll('.preset').forEach((button) => button.addEventListener('click', () => {
   document.querySelectorAll('.preset').forEach((item) => item.classList.remove('active'));
   button.classList.add('active');
   preset = button.dataset.preset;
   generateBox();
 }));
+// Troca o acabamento visual do material no preview.
 document.querySelectorAll('.swatch').forEach((button) => button.addEventListener('click', () => {
   document.querySelectorAll('.swatch').forEach((item) => item.classList.remove('selected'));
   button.classList.add('selected');
@@ -345,17 +368,20 @@ document.querySelectorAll('.swatch').forEach((button) => button.addEventListener
   generateBox();
 }));
 $('divider-options').hidden = true;
+// Ativa ou desativa as opções e peças das divisórias.
 document.querySelector('#has-dividers').addEventListener('change', (event) => {
   hasDividers = event.target.checked;
   $('divider-options').hidden = !hasDividers;
   generateBox();
 });
+// Alterna entre encaixe com dedos e bordas lisas.
 document.querySelectorAll('input[name="joint"]').forEach((input) => input.addEventListener('change', () => {
   jointType = document.querySelector('input[name="joint"]:checked').value;
   $('finger-options').hidden = jointType !== 'finger';
   generateBox();
 }));
 $('finger-options').hidden = false;
+// Ações principais da interface.
 $('generate').addEventListener('click', generateBox);
 $('export').addEventListener('click', () => exportZIP().catch((error) => {
   console.error(error);
@@ -366,6 +392,7 @@ document.querySelectorAll('input:not([name="joint"]), select').forEach((input) =
   generateBox();
 }));
 
+// Inicializa o gerador com os valores padrão da página.
 populateThicknessOptions();
 try {
   init3D();

@@ -1,8 +1,10 @@
+// Mantém uma quantidade ímpar de segmentos para centralizar os dedos nas bordas.
 function centeredSegmentCount(length, fingerLength) {
   const count = Math.max(2, Math.floor(length / fingerLength));
   return count % 2 === 0 ? Math.max(3, count - 1) : count;
 }
 
+// Constrói o contorno de uma placa, incluindo tabs, notches e margens de canto.
 function fingerPoints(width, height, thickness, fingerLength, kerf, edges) {
   const horizontalInset = Math.max(edges.horizontalInset || 0, 0);
   const horizontalCount = centeredSegmentCount(width - 2 * horizontalInset, fingerLength);
@@ -44,24 +46,29 @@ function fingerPoints(width, height, thickness, fingerLength, kerf, edges) {
   return points;
 }
 
+// Retorna um contorno retangular para juntas lisas.
 function rectanglePoints(width, height) {
   return [[0, 0], [width, 0], [width, height], [0, height]];
 }
 
+// Escolhe entre a geometria com dedos e a geometria lisa.
 function panelPoints(width, height, thickness, fingerLength, kerf, edges, jointType) {
   return jointType === 'finger'
     ? fingerPoints(width, height, thickness, fingerLength, kerf, edges)
     : rectanglePoints(width, height);
 }
 
+// Converte uma paridade numérica no nome da borda esperado por fingerPoints.
 function edgeMode(kind, parity) {
   return `${kind}-${parity === 0 ? 'even' : 'odd'}`;
 }
 
+// Mapeia a paridade quando a mesma borda é percorrida no sentido inverso.
 function mappedParity(parity, count, reversed) {
   return reversed ? (count - 1 + parity) % 2 : parity;
 }
 
+// Cria as bordas com slots das divisórias internas.
 function dividerPoints(width, height, thickness, fingerLength, kerf, slots, slotsFromTop, jointType) {
   if (jointType !== 'finger') return rectanglePoints(width, height);
   const points = [];
@@ -95,10 +102,12 @@ function dividerPoints(width, height, thickness, fingerLength, kerf, slots, slot
   return points;
 }
 
+// Guarda o contorno e a transformação espacial de uma peça.
 function piece(name, type, points, thickness, position, rotation = [0, 0, 0]) {
   return { name, type, points, thickness, position, rotation };
 }
 
+// Fonte única da geometria: alimenta simultaneamente SVG e preview 3D.
 export function createBoxGeometry({ width, height, depth, thickness, preset, jointType, fingerLength, kerf, hasDividers, dividerRows, dividerColumns }) {
   const pieces = [];
   const innerWidth = Math.max(thickness, width - 2 * thickness);
@@ -146,6 +155,7 @@ export function createBoxGeometry({ width, height, depth, thickness, preset, joi
     top: 'tab-odd',
     left: 'tab-odd'
   };
+  // Cria uma placa com pontos 2D e sua transformação no espaço da caixa.
   const panel = (name, type, panelWidth, panelHeight, position, rotation, edges) => pieces.push(piece(
     name,
     type,
@@ -155,16 +165,19 @@ export function createBoxGeometry({ width, height, depth, thickness, preset, joi
     rotation
   ));
 
+  // Fundo e quatro paredes principais.
   panel('base', 'base', innerWidth, innerDepth, [-width / 2 + thickness, thickness, -depth / 2 + thickness], [Math.PI / 2, 0, 0], baseEdges);
   panel('front', 'wall', innerWidth, height, [-width / 2 + thickness, 0, depth / 2 - thickness], [0, 0, 0], fingerEdges(preset === 'lid'));
   panel('back', 'wall', innerWidth, height, [-width / 2 + thickness, 0, -depth / 2], [0, 0, 0], fingerEdges(preset === 'lid'));
   panel('left', 'wall', depth, height, [-width / 2, 0, depth / 2], [0, Math.PI / 2, 0], leftEdges(preset === 'lid'));
   panel('right', 'wall', depth, height, [width / 2, 0, -depth / 2], [0, -Math.PI / 2, 0], rightEdges(preset === 'lid'));
 
+  // Tampa opcional, posicionada no topo das paredes.
   if (preset === 'lid') {
     panel('lid', 'lid', innerWidth, innerDepth, [-width / 2 + thickness, height, -depth / 2 + thickness], [Math.PI / 2, 0, 0], lidEdges);
   }
 
+  // Divisórias internas e seus slots de encaixe.
   if (hasDividers) {
     const dividerHeight = preset === 'open' ? height : height - 2 * thickness;
     const rowSlots = Array.from({ length: Math.max(0, dividerColumns - 1) }, (_, index) => (width - 2 * thickness) * (index + 1) / dividerColumns);
