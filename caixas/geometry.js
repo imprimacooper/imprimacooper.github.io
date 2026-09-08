@@ -69,10 +69,11 @@ function mappedParity(parity, count, reversed) {
 }
 
 // Cria as bordas com slots das divisórias internas.
-function dividerPoints(width, height, thickness, fingerLength, kerf, slots, slotsFromTop, jointType) {
+function dividerPoints(width, height, thickness, fingerLength, kerf, slots, slotsFromTop, jointType, edgeKind, slotDepth = thickness * 2) {
   if (jointType !== 'finger') return rectanglePoints(width, height);
+  if (edgeKind === 'plain') return rectanglePoints(width, height);
   const points = [];
-  const notchDepth = Math.max(thickness, thickness * 2 - kerf);
+  const notchDepth = Math.max(thickness, slotDepth - kerf);
   const notchWidth = Math.min(thickness + kerf, fingerLength * .45);
   const addNotchedEdge = (fromTop) => {
     const orderedSlots = slots.slice().sort((a, b) => a - b);
@@ -179,7 +180,7 @@ export function createBoxGeometry({ width, height, depth, thickness, preset, joi
 
   // Divisórias internas e seus slots de encaixe.
   if (hasDividers) {
-    const dividerHeight = preset === 'open' ? height : height - 2 * thickness;
+    const dividerHeight = preset === 'open' ? height - thickness : height - 2 * thickness;
     const rowSlots = Array.from({ length: Math.max(0, dividerColumns - 1) }, (_, index) => (width - 2 * thickness) * (index + 1) / dividerColumns);
     const columnSlots = Array.from({ length: Math.max(0, dividerRows - 1) }, (_, index) => (depth - 2 * thickness) * (index + 1) / dividerRows);
     for (let index = 1; index < dividerRows; index += 1) {
@@ -187,9 +188,9 @@ export function createBoxGeometry({ width, height, depth, thickness, preset, joi
       pieces.push(piece(
         `divider-row-${index}`,
         'divider',
-        dividerPoints(width - 2 * thickness, dividerHeight, thickness, fingerLength, kerf, rowSlots, true, jointType),
+        dividerPoints(width - 2 * thickness, dividerHeight, thickness, fingerLength, kerf, rowSlots, true, jointType, 'notch', dividerHeight / 2),
         thickness,
-        [-width / 2 + thickness, 0, z - thickness / 2]
+        [-width / 2 + thickness, thickness, z - thickness / 2]
       ));
     }
     for (let index = 1; index < dividerColumns; index += 1) {
@@ -197,9 +198,9 @@ export function createBoxGeometry({ width, height, depth, thickness, preset, joi
       pieces.push(piece(
         `divider-column-${index}`,
         'divider',
-        dividerPoints(depth - 2 * thickness, dividerHeight, thickness, fingerLength, kerf, columnSlots, false, jointType),
+        dividerPoints(depth - 2 * thickness, dividerHeight, thickness, fingerLength, kerf, columnSlots, false, jointType, 'plain'),
         thickness,
-        [x - thickness / 2, 0, depth / 2 - thickness],
+        [x - thickness / 2, thickness, depth / 2 - thickness],
         [0, Math.PI / 2, 0]
       ));
     }
