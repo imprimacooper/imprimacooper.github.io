@@ -1,5 +1,7 @@
 export const businessConfig = {
   kerf: 0.01,
+  materialWastePercent: 10,
+  zipPassword: '@Imprima1234',
   currency: 'BRL',
   acrylic: [
     { thickness: 2, pricePerSquareMeter: 380 },
