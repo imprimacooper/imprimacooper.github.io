@@ -153,7 +153,9 @@ function getMaterialEstimate(width, height, depth, thickness) {
   }
   const margin = Math.max(0, Number(businessConfig.materialWastePercent) || 0) / 100;
   const squareMeters = (area / 1000000) * (1 + margin);
-  return { area: squareMeters, value: squareMeters * material.pricePerSquareMeter };
+  const materialValue = squareMeters * material.pricePerSquareMeter;
+  const minimumPrice = Math.max(0, Number(businessConfig.minimumPrice) || 0);
+  return { area: squareMeters, value: Math.max(materialValue, minimumPrice) };
 }
 
 function updateEstimate(width, height, depth, thickness) {
